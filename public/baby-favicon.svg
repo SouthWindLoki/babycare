@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="宝宝头像">
+  <defs>
+    <linearGradient id="tile" x2=".8" y2="1"><stop stop-color="#f2f6e9"/><stop offset="1" stop-color="#b8cdb2"/></linearGradient>
+    <radialGradient id="skin" cx=".38" cy=".3" r=".75"><stop stop-color="#fff2db"/><stop offset=".57" stop-color="#ffdbb6"/><stop offset="1" stop-color="#e8aa83"/></radialGradient>
+    <radialGradient id="ear"><stop stop-color="#e9a486"/><stop offset=".58" stop-color="#f6bf9a"/><stop offset="1" stop-color="#ffe0ba"/></radialGradient>
+    <radialGradient id="cheek"><stop stop-color="#ef9b8d" stop-opacity=".8"/><stop offset="1" stop-color="#ef9b8d" stop-opacity="0"/></radialGradient>
+    <linearGradient id="hair" x2=".4" y2="1"><stop stop-color="#a57248"/><stop offset="1" stop-color="#70462f"/></linearGradient>
+    <linearGradient id="dummy" x2=".5" y2="1"><stop stop-color="#a9c8aa"/><stop offset=".5" stop-color="#769c7f"/><stop offset="1" stop-color="#4c735d"/></linearGradient>
+    <radialGradient id="eye" cx=".3" cy=".2"><stop stop-color="#795643"/><stop offset="1" stop-color="#35291f"/></radialGradient>
+  </defs>
+  <rect x="2" y="2" width="124" height="124" rx="29" fill="#9fb699"/>
+  <rect x="2" y="1" width="124" height="122" rx="29" fill="url(#tile)"/>
+  <rect x="4" y="3" width="120" height="118" rx="27" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="2"/>
+  <ellipse cx="65" cy="106" rx="41" ry="10" fill="#64805e" opacity=".18"/>
+  <ellipse cx="21" cy="67" rx="10" ry="14" fill="url(#ear)"/>
+  <ellipse cx="107" cy="67" rx="10" ry="14" fill="url(#ear)"/>
+  <path d="M64 19c27 0 44 19 44 47 0 29-19 45-44 45S20 95 20 66c0-28 17-47 44-47Z" fill="#c58e6b" opacity=".15" transform="translate(0 3)"/>
+  <path d="M64 17c27 0 44 19 44 47 0 29-19 45-44 45S20 93 20 64c0-28 17-47 44-47Z" fill="url(#skin)"/>
+  <path d="M31 46c5-14 15-21 29-22" fill="none" stroke="#fff8e7" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+  <path d="M53 22c-5-9 7-17 16-13 8 4 7 14 0 17-6 2-12-2-10-6 1-3 5-3 6-1" fill="none" stroke="url(#hair)" stroke-width="6" stroke-linecap="round"/>
+  <ellipse cx="36" cy="79" rx="14" ry="10" fill="url(#cheek)"/>
+  <ellipse cx="92" cy="79" rx="14" ry="10" fill="url(#cheek)"/>
+  <ellipse cx="45" cy="63" rx="5" ry="6.5" fill="url(#eye)"/>
+  <ellipse cx="83" cy="63" rx="5" ry="6.5" fill="url(#eye)"/>
+  <circle cx="43.5" cy="61" r="1.6" fill="#fff8e9"/>
+  <circle cx="81.5" cy="61" r="1.6" fill="#fff8e9"/>
+  <path d="M60 74q4 4 8 0" fill="none" stroke="#c99171" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="64" cy="92" rx="20" ry="12" fill="#a87559" opacity=".16"/>
+  <path d="M44 86c0-9 10-10 20-5 10-5 20-4 20 5s-10 14-20 14-20-5-20-14Z" fill="url(#dummy)" stroke="#5d8165" stroke-width="1"/>
+  <path d="M49 85c2-3 6-3 10-1" fill="none" stroke="#e2efdb" stroke-width="2.5" stroke-linecap="round" opacity=".75"/>
+  <circle cx="64" cy="89" r="7" fill="#e9ddbd" stroke="#f9efda" stroke-width="1.5"/>
+  <ellipse cx="64" cy="100" rx="8" ry="9" fill="none" stroke="#42664e" stroke-width="4.5"/>
+  <path d="M58 98c-1 4 0 7 2 8" fill="none" stroke="#d0dfbd" stroke-width="1.7" stroke-linecap="round"/>
+</svg>

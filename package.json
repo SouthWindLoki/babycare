@@ -1,0 +1,12 @@
+{
+  "name": "babycare-log",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A small SQLite-backed feeding log for infant care.",
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-sqlite server.js",
+    "dev": "node --watch --experimental-sqlite server.js",
+    "test": "node --experimental-sqlite --test tests/*.test.js"
+  }
+}

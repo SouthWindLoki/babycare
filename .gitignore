@@ -1,0 +1,14 @@
+data/
+node_modules/
+work/
+outputs/
+.DS_Store
+
+# Local settings and databases
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*

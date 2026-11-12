@@ -1,0 +1,19 @@
+name: o-w
+
+services:
+  babycare:
+    build: .
+    ports:
+      - "${APP_PORT:?请在 .env 中配置 APP_PORT}:3000"
+    volumes:
+      - babycare-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/baby').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+
+volumes:
+  babycare-data:

@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f7f5ef"><title>记异常 · 宝宝日常</title><link rel="stylesheet" href="/styles.css"><link rel="icon" type="image/svg+xml" href="/baby-favicon.svg"><link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png"><link rel="shortcut icon" href="/favicon.ico"><link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"></head><body data-operation="abnormal"><main class="shell operation-shell">
+<header class="topbar"><a href="/" class="back-link">← 返回首页</a><span class="operation-brand" id="brand-name">宝宝日常</span></header>
+<section class="operation-heading"><p class="eyebrow">留意变化，及时照护</p><h1>记异常</h1><p>选择一种异常，填写对应的记录表单。</p></section>
+<section class="panel operation-panel"><form id="abnormal-form">
+<label>记录时间<input id="event-time" name="occurredAt" type="datetime-local" required></label>
+<p class="field-label abnormal-label">选择异常类别</p><div class="abnormal-categories" id="abnormal-categories" role="group" aria-label="选择异常类别"></div>
+<p class="urgent-note" id="urgent-note" role="alert" hidden>这些表现需要立即联系医生或就医，情况紧急时拨打 120。请不要因填写记录而耽误就医。</p>
+<div id="abnormal-fields"></div>
+<label>补充描述（选填）<textarea id="abnormal-note" name="note" rows="3" maxlength="1000" placeholder="例如：从什么时候开始、出现几次、与之前有什么不同"></textarea></label>
+<div class="operation-feedback" id="operation-message" role="status"></div>
+<div class="operation-footer"><button type="submit" class="primary-button full-width operation-submit">保存异常记录</button></div>
+</form></section><p class="operation-tip">如宝宝状态明显不对，请及时联系医生。</p><div class="toast" id="toast" role="status"></div></main><script type="module" src="/abnormal.js"></script></body></html>
