@@ -143,3 +143,5 @@ body[data-operation=medication] textarea{display:block;width:100%;min-height:110
   .trend-trigger{min-height:44px;min-width:64px}
 }
 @media(prefers-reduced-motion:reduce){#quick-actions{transition:none}}
+
+.operation-shell .toast{bottom:calc(106px + env(safe-area-inset-bottom));z-index:30}

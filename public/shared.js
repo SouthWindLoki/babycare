@@ -46,3 +46,30 @@ export function babyAge(birthday, date = new Date()) {
   if (current < birth) return '生日尚未到来';
   return months > 0 ? `${months} 个月 ${days} 天` : `${days} 天`;
 }
+
+// Translate browser constraint feedback and keep it visible above the save action.
+export function setupFormValidation(form, message) {
+  let pending = false;
+  form.addEventListener('invalid', event => {
+    event.preventDefault();
+    if (pending) return;
+    pending = true;
+    queueMicrotask(() => {
+      pending = false;
+      const field = form.querySelector('input:invalid,select:invalid,textarea:invalid');
+      if (!field) return;
+      const label = field.labels?.[0];
+      const name = label ? [...label.childNodes].filter(node => node.nodeType === 3).map(node => node.textContent).join('').trim() || label.querySelector('span:last-child')?.textContent : '';
+      let text = `请检查${name || '填写内容'}`;
+      const validity = field.validity;
+      if (validity.valueMissing) text = field.type === 'radio' || field.tagName === 'SELECT' ? `请选择${field.name === 'phototherapy' ? '是否照蓝光' : name || '对应选项'}` : `请填写${name || '必填内容'}`;
+      else if (validity.rangeUnderflow) text = `${name || '数值'}不能小于 ${field.min}`;
+      else if (validity.rangeOverflow) text = `${name || '数值'}不能大于 ${field.max}`;
+      else if (validity.stepMismatch) text = `${name || '数值'}请按 ${field.step} 的间隔填写`;
+      if (message) message.textContent = text;
+      showToast(text);
+      field.focus({preventScroll: true});
+      field.scrollIntoView({block: 'center'});
+    });
+  }, true);
+}

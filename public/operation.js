@@ -1,8 +1,9 @@
 import { setupCommonMedicines } from '/common-medicines.js';
 import { feedingMethodLabels, feedingMethodIcons } from '/feeding-options.js';
-import { $, api, localInputValue, showToast } from '/shared.js';
+import { $, api, localInputValue, showToast, setupFormValidation } from '/shared.js';
 const kind=document.body.dataset.operation;
 const form=$('#operation-form'), button=form.querySelector('button[type="submit"]'), message=$('#operation-message');
+setupFormValidation(form, message);
 let photoData=null, photoBusy=false, photoGeneration=0;
 if ($('#event-time')) $('#event-time').value=localInputValue();
 api('/api/baby').then(({baby})=>{ if (baby?.name) { $('#brand-name').textContent=`${baby.name}日常`; document.title=`${document.querySelector('h1').textContent} · ${baby.name}日常`; } }).catch(()=>{});
@@ -98,5 +99,5 @@ form.addEventListener('submit',async event=>{
   if(kind==='medication'){path='/api/medications';method='POST';payload={occurredAt:new Date(data.get('occurredAt')).toISOString(),medicines:[...form.querySelectorAll('.medicine-row')].map(row=>({name:row.querySelector('[name="medicineName"]').value,dose:row.querySelector('[name="medicineDose"]').value,unit:row.querySelector('[name="medicineUnit"]').value,...(row.dataset.medicineId?{medicineId:Number(row.dataset.medicineId)}:{})})),note:data.get('note'),photo:photoData};}
   button.disabled=true;message.textContent='正在保存，请稍等…';
   try {await api(path,{method,body:JSON.stringify(payload)});location.href=`/?saved=${kind}`;}
-  catch(error){message.textContent=error.message;button.disabled=false;}
+  catch(error){message.textContent=error.message;showToast(error.message);button.disabled=false;}
 });
