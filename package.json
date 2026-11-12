@@ -2,11 +2,28 @@
   "name": "babycare-log",
   "version": "1.0.0",
   "private": true,
-  "description": "A small SQLite-backed feeding log for infant care.",
+  "description": "支持 Docker 自部署的中文婴幼儿照护记录应用，记录喂奶、母乳、尿布、便便、体重身长和用药计划。",
   "type": "module",
   "scripts": {
     "start": "node --experimental-sqlite server.js",
     "dev": "node --watch --experimental-sqlite server.js",
     "test": "node --experimental-sqlite --test tests/*.test.js"
-  }
+  },
+  "keywords": [
+    "baby-tracker",
+    "babycare",
+    "newborn",
+    "infant-care",
+    "feeding-tracker",
+    "breastfeeding",
+    "diaper-tracker",
+    "growth-tracker",
+    "medication-tracker",
+    "self-hosted",
+    "docker",
+    "sqlite",
+    "宝宝记录",
+    "喂奶记录",
+    "新生儿照护"
+  ]
 }

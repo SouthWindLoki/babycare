@@ -1,12 +1,12 @@
-# 宝宝日常
+# 宝宝日常（Babycare）
+
+支持 Docker 自部署的中文婴幼儿照护记录应用，涵盖新生儿喂奶与母乳记录、换尿布、便便、体重身长、用药计划及喂奶提醒，适合家庭、月嫂和长辈使用。
 
 ## 环境要求
 
 安装 Git、Docker 和 Docker Compose。使用 Docker Desktop 时已包含 Docker Compose。
 
 ## 初始化
-
-私有仓库需要先登录有访问权限的 GitHub 账号。
 
 ```sh
 git clone <仓库地址> babycare
