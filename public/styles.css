@@ -145,3 +145,14 @@ body[data-operation=medication] textarea{display:block;width:100%;min-height:110
 @media(prefers-reduced-motion:reduce){#quick-actions{transition:none}}
 
 .operation-shell .toast{bottom:calc(106px + env(safe-area-inset-bottom));z-index:30}
+
+/* Make navigation back to the previous level immediately recognizable. */
+.topbar .back-link:not(.config-entry){display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:8px 17px;border:1px solid #35513f;border-radius:10px;background:var(--green);color:#fff;font-size:18px;font-weight:700;line-height:1.25;text-decoration:none;white-space:nowrap;box-shadow:0 3px 0 #314a39,0 5px 12px rgba(37,59,48,.16)}
+.topbar .back-link:not(.config-entry):hover{background:#385b45;text-decoration:none}
+.topbar .back-link:not(.config-entry):active{transform:translateY(2px);box-shadow:0 1px 0 #314a39}
+.topbar .back-link:not(.config-entry):focus-visible{outline:3px solid #d98a67;outline-offset:3px}
+@media(max-width:620px){
+  .topbar .back-link:not(.config-entry){min-height:56px;padding:9px 15px;font-size:18px}
+  .topbar .operation-brand{max-width:34%;font-size:14px;line-height:1.3;text-align:right;overflow-wrap:anywhere}
+}
+@media(max-width:360px){.topbar .back-link:not(.config-entry){padding-inline:12px;font-size:17px}.topbar .operation-brand{max-width:31%;font-size:13px}}
