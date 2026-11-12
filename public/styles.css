@@ -130,3 +130,16 @@ body[data-operation=medication] textarea{display:block;width:100%;min-height:110
 .medication-plan-link{text-decoration:none}
 
 .configured-common-medicines{margin-top:24px;padding-top:18px;border-top:1px solid var(--line)}.configured-common-medicines h4{margin:0 0 12px;font-size:18px}.configured-medicine-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}.configured-medicine-row:last-child{border-bottom:0}.configured-medicine-row>span{min-width:0;overflow-wrap:anywhere}.configured-medicine-row .edit-common-medicine{border:1px solid var(--line);border-radius:8px;font-weight:600;flex-shrink:0;cursor:pointer}
+
+/* Mobile quick actions slide away while reading and return when scrolling stops. */
+.quick-actions-toggle{display:none}
+@media(max-width:620px){
+  body:has(#quick-actions) .shell{padding-bottom:calc(var(--quick-actions-height,230px) + 24px)}
+  #quick-actions{transition:transform .2s ease,visibility .2s}
+  .quick-actions-collapsed #quick-actions{transform:translateY(100%);visibility:hidden}
+  .quick-actions-toggle:not([hidden]){display:flex;align-items:center;justify-content:center;gap:8px;position:fixed;z-index:8;bottom:calc(10px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);min-height:48px;padding:8px 20px;border:1px solid #bdcdb7;border-radius:12px;background:var(--green-light);color:var(--green);font-size:18px;font-weight:700;white-space:nowrap}
+  body:has(#quick-actions) .toast{bottom:calc(var(--quick-actions-height,230px) + 12px)}
+  body.quick-actions-collapsed .toast{bottom:calc(74px + env(safe-area-inset-bottom))}
+  .trend-trigger{min-height:44px;min-width:64px}
+}
+@media(prefers-reduced-motion:reduce){#quick-actions{transition:none}}

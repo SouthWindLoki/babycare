@@ -1,3 +1,4 @@
+import { setupQuickActions } from '/quick-actions.js';
 import { feedingValue, exportFeedingAmount, feedingMethodIcons, updatePlanControls, getPlanFeedingType, setPlanFeedingType } from '/feeding-options.js';
 import { abnormalCategories, abnormalDetails } from '/abnormal-options.js';
 import { milkReference, milkStatus, nutritionPdfUrl } from '/nutrition.js';
@@ -5,6 +6,7 @@ import { trendKeys, trendQuery, trendValue } from '/trends.js';
 import { $, localInputValue, formatDate, formatTime, showToast, api, babyAge } from '/shared.js';
 const state = { records: [], stools: [], diapers: [], medications: [], medicationPlans: [], weights: [], lengths: [], summary: null, intervalHours: 3, amountMl: 120, feedingType: 'formula', breastMethod:'direct', formulaBrand: '', formulaStage: 1, baby: null, filter: 'all', logs: { records: [], weights: [], lengths: [], abnormalities: [], stools: [], diapers: [], medications: [] } };
 let notifiedAt = null;
+setupQuickActions();
 function renderHomeView() {
   const records=location.hash==='#records';
   $('#overview-panel').hidden=records;
