@@ -3,6 +3,23 @@
 <header class="topbar"><a href="/" class="back-link">← 返回首页</a><span class="operation-brand" id="brand-name">宝宝日常</span></header>
 <section class="operation-heading"><p class="eyebrow">吃饱啦，记一下</p><h1>记喂奶</h1><p>按本次实际喂法记录，下一次时间仅作参考。</p></section>
 <section class="panel operation-panel"><form id="operation-form"><p id="feeding-plan-note" class="inline-note">正在读取喂奶计划…</p><fieldset class="feeding-methods" id="feeding-methods"><legend>本次喂法</legend><div class="symptom-options" id="feeding-method-options"></div></fieldset><div id="feeding-amount-field"><label>喂奶量（毫升）<output class="range-output" id="amount-output" for="amount-ml">120 毫升</output><input id="amount-ml" name="amountMl" type="range" inputmode="numeric" min="10" max="300" step="10" value="120" required></label>
-<p class="field-hint">每次滑动增加 10 毫升，先按计划奶量带出，也可以按实际情况调整。</p></div><p class="inline-note" id="direct-feeding-note" hidden>母乳亲喂只记录时间，不需要填写毫升数。</p>
+<p class="field-hint">每次滑动增加 10 毫升，先按计划奶量带出，也可以按实际情况调整。</p></div><p class="inline-note" id="direct-feeding-note" hidden>左右侧分别计时，换边时点另一侧即可；不填写毫升数。</p>
+<section class="nursing-timer" id="nursing-timer" aria-labelledby="nursing-title" hidden>
+  <h2 id="nursing-title">亲喂计时</h2>
+  <div class="previous-nursing" aria-labelledby="previous-nursing-title">
+    <h3 id="previous-nursing-title">上一次亲喂</h3>
+    <p class="previous-nursing-date" id="previous-nursing-date"></p>
+    <div class="previous-nursing-durations" id="previous-nursing-durations" hidden><p>左侧 <strong id="previous-nursing-left"></strong></p><p>右侧 <strong id="previous-nursing-right"></strong></p></div>
+    <p class="previous-nursing-note" id="previous-nursing-note" role="status">正在读取…</p>
+  </div>
+  <p class="nursing-current-label">本次计时</p>
+  <div class="nursing-sides">
+    <div class="nursing-side"><h3>左侧乳房</h3><output data-timer-value="left" aria-label="左侧喂养时长">00:00</output><button type="button" class="secondary-button" data-timer-side="left" aria-pressed="false" aria-label="左侧乳房计时">开始计时</button></div>
+    <div class="nursing-side"><h3>右侧乳房</h3><output data-timer-value="right" aria-label="右侧喂养时长">00:00</output><button type="button" class="secondary-button" data-timer-side="right" aria-pressed="false" aria-label="右侧乳房计时">开始计时</button></div>
+  </div>
+  <p class="nursing-total" data-timer-total>合计 0 分</p>
+  <div class="nursing-controls"><button type="button" class="secondary-button" data-timer-reset>清空计时</button></div>
+  <details class="nursing-manual"><summary>补记或调整时长</summary><div class="nursing-manual-fields"><label>左侧（分钟）<input type="number" min="0" max="1440" step="0.1" inputmode="decimal" data-timer-minutes="left" placeholder="未喂可留空"></label><label>右侧（分钟）<input type="number" min="0" max="1440" step="0.1" inputmode="decimal" data-timer-minutes="right" placeholder="未喂可留空"></label></div></details>
+</section>
 <label>喂奶时间<input id="event-time" name="occurredAt" type="datetime-local" required></label><label>备注（选填）<input name="note" type="text" maxlength="160" placeholder="例如：喝完了，状态很好"></label><div class="operation-feedback" id="operation-message" role="status"></div><div class="operation-footer"><button type="submit" class="primary-button full-width operation-submit">保存喂奶记录</button></div></form></section>
 <p class="operation-tip">时间已默认为现在，也可以修改时间补记。</p><div class="toast" id="toast" role="status"></div></main><script type="module" src="/operation.js"></script></body></html>

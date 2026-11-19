@@ -4,6 +4,7 @@ FROM ${NODE_IMAGE}
 WORKDIR /app
 COPY package.json server.js ./
 COPY public ./public
+COPY docs/vaccination-schedule.json ./docs/vaccination-schedule.json
 
 RUN mkdir -p /app/data
 ENV NODE_ENV=production

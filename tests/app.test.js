@@ -34,6 +34,60 @@ test('档案校验、保存和月龄计算',async()=>{
   assert.equal(babyAge('2026-01-31',new Date(2026,1,28)),'1 个月 0 天');
   assert.equal(babyAge('2024-02-29',new Date(2025,1,28)),'12 个月 0 天');
 });
+test('参考资料接口返回完整的疫苗路线资料',async()=>{
+  const result=await request('/api/references/vaccination-schedule');
+  assert.equal(result.status,200);
+  assert.equal(result.data.schedule.rows.length,23);
+  assert.equal(result.data.schedule.rows[2].ageMonths,1.5);
+  assert.equal(result.data.schedule.rows.at(-1).recurrence,'annual');
+  for(const path of ['/references.html','/references.js','/references-model.js']) {
+    const response=await fetch(base+path);assert.equal(response.status,200,path);
+    assert.ok((await response.text()).length>0);
+  }
+  assert.equal(result.data.schedule.rows[0].age,'出生时');
+  assert.equal(result.data.schedule.rows.at(-1).age,'6月龄～3周岁儿童型；3周岁以上成人型');
+  const paid=result.data.schedule.rows.flatMap(row=>row.selfPaid);
+  assert.ok(paid.some(item=>item.name==='13价肺炎TT①'));
+  assert.equal(paid.find(item=>item.name==='流感疫苗').priceYuan,null);
+});
+test('发育自评按月龄保存到数据库、校验状态并在服务重启后保留',async()=>{
+  assert.deepEqual((await request('/api/development-assessments')).data.assessments,{});
+  const responses=['yes','no','unsure','yes','yes'];
+  const birthday=(await request('/api/baby')).data.baby.birthday;
+  assert.equal((await request('/api/development-assessments/6','PUT',{birthday,responses})).status,200);
+  assert.deepEqual((await request('/api/development-assessments')).data.assessments[6],responses);
+  for(const [age,values] of [[5,responses],[3,['yes']],[8,['yes','maybe','no','yes','yes']],[12,'yes']]) {
+    assert.equal((await request(`/api/development-assessments/${age}`,'PUT',{birthday,responses:values})).status,400);
+  }
+  assert.equal((await request('/api/development-assessments/6','PUT',{birthday:'2000-01-01',responses})).status,409);
+  await request('/api/baby','PUT',{name:'小满',birthday:'2026-10-29'});
+  assert.deepEqual((await request('/api/development-assessments')).data.assessments,{});
+  await request('/api/baby','PUT',{name:'小满',birthday});
+  assert.deepEqual((await request('/api/development-assessments')).data.assessments[6],responses);
+  await stop();await start();
+  assert.deepEqual((await request('/api/development-assessments')).data.assessments[6],responses);
+  for(const path of ['/development-assessment-data.js']) assert.equal((await fetch(base+path)).status,200);
+});
+test('首页成长小观察保存每日一条并按宝宝生日隔离',async()=>{
+  await request('/api/baby','PUT',{name:'小满',birthday:'2026-05-11'});
+  assert.deepEqual((await request('/api/development-observations')).data.observations,[]);
+  const birthday=(await request('/api/baby')).data.baby.birthday;
+  const saved=await request('/api/development-observations','POST',{birthday,promptId:'milestone-6-0',response:'observed',note:'今天留意到宝宝自己坐了一会儿'});
+  assert.equal(saved.status,201);
+  assert.equal(saved.data.observations.length,1);
+  assert.equal(saved.data.observations[0].promptText,'最近有没有留意到：可自己坐一会儿（允许手撑着地面）？');
+  assert.equal(saved.data.observations[0].context,'6月龄参考 · 大运动');
+  assert.equal((await request('/api/development-observations','POST',{birthday,promptId:'milestone-6-0',response:'not_yet'})).status,200);
+  assert.equal((await request('/api/development-observations')).data.observations[0].response,'observed');
+  assert.equal((await request('/api/development-observations','POST',{birthday,promptId:'milestone-8-0',response:'observed'})).status,400);
+  assert.equal((await request('/api/development-observations','POST',{birthday,promptId:'milestone-6-0',response:'observed',note:'x'.repeat(301)})).status,400);
+  assert.equal((await request('/api/development-observations','POST',{birthday:'2020-01-01',promptId:'milestone-6-0',response:'observed'})).status,409);
+  await request('/api/baby','PUT',{name:'小满',birthday:'2026-10-29'});
+  assert.deepEqual((await request('/api/development-observations')).data.observations,[]);
+  assert.equal((await request('/api/development-observations','POST',{birthday:'2026-10-29',promptId:'early-face',response:'unsure'})).status,201);
+  await stop();await start();
+  assert.equal((await request('/api/development-observations')).data.observations[0].promptId,'early-face');
+});
 test('出生体重和身长可选填、保存、校验、保留并清空',async()=>{
  const profile={name:'小满',birthday:'2026-10-30'};
  assert.equal((await request('/api/baby')).data.baby.birth_weight_grams,null);
@@ -140,13 +194,13 @@ test('便便照片选填，无图记录参与统计且不提供照片',async()=>
   }
   stoolWithoutPhotoId=(await request('/api/stools','POST',{occurredAt:'2026-11-09T00:00:00.000Z',note:'无图持久化'})).data.id;
 });
-test('今日尿布和便便次数按设备本地零点统计',async()=>{
+test('兼容字段：便便自然日统计与湿尿布滚动24小时统计',async()=>{
   const ids=[];
   for(const occurredAt of ['2026-11-10T15:59:59.000Z','2026-11-10T16:00:00.000Z','2026-11-11T16:00:00.000Z']) {
     const saved=await request('/api/stools','POST',{occurredAt,photo});ids.push(saved.data.id);
   }
   const {summary}= (await request('/api/records')).data;
-  assert.equal(summary.todayDiaperCount,1);
+  assert.equal(summary.todayDiaperCount,summary.last24HoursWetDiaperCount);
   assert.equal(summary.todayStoolCount,2);
   for(const id of ids) await request(`/api/stools/${id}`,'DELETE');
 });
@@ -235,6 +289,36 @@ test('常用药品名称和单位保存、查重、修改，计划支持两种�
   assert.equal((await request('/api/medications')).data.medications.find(item=>item.id===log.data.id).medicines[0].unit,'滴');
   await request(`/api/medications/${log.data.id}`,'DELETE');
   await request(`/api/medication-plans/${plan.id}`,'PATCH',{enabled:false});
+});
+test('用药参考随创建前和新增记录更新，多项计划互不影响',async()=>{
+  const medicines=[];
+  for(const name of ['间隔回归药品','每日回归药品']){
+    const result=await request('/api/common-medicines','POST',{name,unit:'滴'});
+    assert.equal(result.status,201);medicines.push(result.data.medicines.find(item=>item.name===name));
+  }
+  const now=Date.now(),before=new Date(now-3600000).toISOString(),start=new Date(now-1800000).toISOString();
+  const earlier=await request('/api/medications','POST',{occurredAt:before,medicines:[{medicineId:medicines[0].id,name:medicines[0].name,dose:'1',unit:'滴'}]});
+  assert.equal(earlier.status,201);
+  const result=await request('/api/medication-plans','POST',{medicineId:medicines[0].id,dose:'1',mode:'interval',intervalHours:48,startAt:start,timezoneOffset:-480,enabled:true});
+  assert.equal(result.status,201);
+  const plan=result.data.plans.find(item=>item.medicine_id===medicines[0].id);
+  assert.equal(plan.nextAt,new Date(Date.parse(before)+48*3600000).toISOString());
+  const dailyStart=new Date(now-86400000);dailyStart.setUTCSeconds(0,0);
+  const dailyResult=await request('/api/medication-plans','POST',{medicineId:medicines[1].id,dose:'1',mode:'daily',startAt:dailyStart.toISOString(),dailyTime:dailyStart.toISOString().slice(11,16),timezoneOffset:0,enabled:true});
+  assert.equal(dailyResult.status,201);
+  const daily=dailyResult.data.plans.find(item=>item.medicine_id===medicines[1].id);
+  const at=new Date(now-60000).toISOString();
+  const newer=await request('/api/medications','POST',{occurredAt:at,medicines:[{medicineId:medicines[0].id,name:medicines[0].name,dose:'1',unit:'滴'}]});
+  assert.equal(newer.status,201);
+  let plans=(await request('/api/medication-plans')).data.plans;
+  assert.equal(plans.find(item=>item.id===plan.id).nextAt,new Date(Date.parse(at)+48*3600000).toISOString());
+  assert.equal(plans.find(item=>item.id===daily.id).nextAt,daily.nextAt);
+  const dailyLog=await request('/api/medications','POST',{occurredAt:new Date().toISOString(),medicines:[{medicineId:medicines[1].id,name:medicines[1].name,dose:'1',unit:'滴'}]});
+  assert.equal(dailyLog.status,201);
+  plans=(await request('/api/medication-plans')).data.plans;
+  assert.equal(plans.find(item=>item.id===daily.id).nextAt,new Date(Date.parse(daily.nextAt)+86400000).toISOString());
+  for(const id of [earlier.data.id,newer.data.id,dailyLog.data.id])await request(`/api/medications/${id}`,'DELETE');
+  for(const id of [plan.id,daily.id])await request(`/api/medication-plans/${id}`,'PATCH',{enabled:false});
 });
 test('用药记录支持常用药、多种药品、照片和日期筛选',async()=>{
   const at='2026-11-11T09:21:00.000Z';

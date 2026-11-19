@@ -1,0 +1,441 @@
+{
+  "title": "浙江省儿童疫苗接种参考表",
+  "sourceType": "浙江省儿童疫苗接种表",
+  "sourceDate": null,
+  "region": "浙江省",
+  "currency": "人民币",
+  "status": "transcribed",
+  "notes": [
+    "本文件按照片逐行录入，保留了照片中的产品简称、剂次和价格写法。",
+    "用户确认本表来自浙江省；照片没有标注发布机构、日期和价格有效期，价格只能作为原表记录，不能作为当前收费承诺。",
+    "免疫程序、产品说明书和本地接种门诊安排优先于本文件。接种前应向门诊核对适用年龄、剂次、库存、价格和禁忌。",
+    "带星号的免费疫苗，照片注释说明可以由非免疫规划疫苗替代。联合疫苗与单苗不能简单叠加计算。"
+  ],
+  "legend": {
+    "freeMarker": "※",
+    "freeMarkerMeaning": "带※的免疫规划疫苗可由非免疫规划疫苗替代",
+    "priceMeaning": "照片标注的价格，单位为元，含接种费",
+    "unknown": "照片中无法确认或未提供的信息使用 null，不自行补写"
+  },
+  "rows": [
+    {
+      "age": "出生时",
+      "free": [
+        "乙肝①",
+        "卡介苗"
+      ],
+      "selfPaid": [],
+      "ageMonths": 0,
+      "ageEndMonths": 0
+    },
+    {
+      "age": "1月龄（满月）",
+      "free": [
+        "乙肝②"
+      ],
+      "selfPaid": [],
+      "ageMonths": 1,
+      "ageEndMonths": 1
+    },
+    {
+      "age": "1.5月龄",
+      "free": [],
+      "selfPaid": [
+        {
+          "name": "13价肺炎TT①",
+          "priceYuan": 621,
+          "alternativeGroup": "pcv13"
+        },
+        {
+          "name": "13价肺炎197①",
+          "priceYuan": 721,
+          "alternativeGroup": "pcv13"
+        },
+        {
+          "name": "五价轮状病毒① / 六价轮状病毒①",
+          "priceYuan": "303 / 321"
+        }
+      ],
+      "ageMonths": 1.5,
+      "ageEndMonths": 1.5,
+      "alternativeGroups": {
+        "pcv13": {
+          "title": "13价肺炎疫苗 · 选择一种方案",
+          "note": "后续剂次按所选产品及接种门诊安排。"
+        }
+      }
+    },
+    {
+      "age": "2月龄",
+      "free": [
+        "※脊灰疫苗（IPV）①",
+        "※百白破①"
+      ],
+      "selfPaid": [
+        {
+          "name": "进口五联①",
+          "priceYuan": 661
+        }
+      ],
+      "ageMonths": 2,
+      "ageEndMonths": 2
+    },
+    {
+      "age": "2.5月龄",
+      "free": [],
+      "selfPaid": [
+        {
+          "name": "13价肺炎197②",
+          "priceYuan": 721
+        },
+        {
+          "name": "五价轮状病毒② / 六价轮状病毒②",
+          "priceYuan": "303 / 321"
+        }
+      ],
+      "ageMonths": 2.5,
+      "ageEndMonths": 2.5
+    },
+    {
+      "age": "3月龄",
+      "free": [
+        "※脊灰疫苗（IPV）②"
+      ],
+      "selfPaid": [
+        {
+          "name": "国产四联① / 进口五联②",
+          "priceYuan": "391 / 661",
+          "combinationChoices": [
+            {
+              "name": "国产四联①",
+              "priceYuan": 391
+            },
+            {
+              "name": "进口五联②",
+              "priceYuan": 661
+            }
+          ]
+        },
+        {
+          "name": "如需在3月龄接种ACYW135结合，需接种四剂次",
+          "priceYuan": 443
+        }
+      ],
+      "ageMonths": 3,
+      "ageEndMonths": 3
+    },
+    {
+      "age": "3.5月龄",
+      "free": [],
+      "selfPaid": [
+        {
+          "name": "13价肺炎TT②",
+          "priceYuan": 621
+        },
+        {
+          "name": "13价肺炎197③",
+          "priceYuan": 721
+        },
+        {
+          "name": "五价轮状病毒③ / 六价轮状病毒③",
+          "priceYuan": "303 / 321"
+        }
+      ],
+      "ageMonths": 3.5,
+      "ageEndMonths": 3.5
+    },
+    {
+      "age": "4月龄",
+      "free": [
+        "※脊灰疫苗（IPV）③",
+        "※百白破②"
+      ],
+      "selfPaid": [
+        {
+          "name": "国产四联② / 进口五联③",
+          "priceYuan": "391 / 661",
+          "combinationChoices": [
+            {
+              "name": "国产四联②",
+              "priceYuan": 391
+            },
+            {
+              "name": "进口五联③",
+              "priceYuan": 661
+            }
+          ]
+        }
+      ],
+      "ageMonths": 4,
+      "ageEndMonths": 4
+    },
+    {
+      "age": "5月龄",
+      "free": [],
+      "selfPaid": [
+        {
+          "name": "国产四联③",
+          "priceYuan": 391
+        }
+      ],
+      "ageMonths": 5,
+      "ageEndMonths": 5
+    },
+    {
+      "age": "5.5月龄",
+      "free": [],
+      "selfPaid": [
+        {
+          "name": "13价肺炎TT③",
+          "priceYuan": 621
+        }
+      ],
+      "ageMonths": 5.5,
+      "ageEndMonths": 5.5
+    },
+    {
+      "age": "6月龄",
+      "free": [
+        "乙肝③",
+        "※流脑A①",
+        "※百白破③"
+      ],
+      "selfPaid": [
+        {
+          "name": "AC结合① / ACYW135结合①",
+          "priceYuan": "181 / 443"
+        }
+      ],
+      "ageMonths": 6,
+      "ageEndMonths": 6
+    },
+    {
+      "age": "7月龄",
+      "free": [],
+      "selfPaid": [
+        {
+          "name": "AC结合② / ACYW135结合② / Hib①",
+          "priceYuan": "181 / 443 / 125"
+        }
+      ],
+      "ageMonths": 7,
+      "ageEndMonths": 7
+    },
+    {
+      "age": "8月龄",
+      "free": [
+        "麻腮风①",
+        "※乙脑①"
+      ],
+      "selfPaid": [
+        {
+          "name": "乙脑灭活（两针剂，间隔半个月）①②",
+          "priceYuan": 239
+        }
+      ],
+      "ageMonths": 8,
+      "ageEndMonths": 8
+    },
+    {
+      "age": "9月龄",
+      "free": [
+        "※流脑A②"
+      ],
+      "selfPaid": [],
+      "ageMonths": 9,
+      "ageEndMonths": 9
+    },
+    {
+      "age": "10月龄",
+      "free": [],
+      "selfPaid": [
+        {
+          "name": "Hib② / EV71①（6月龄至5周岁都可以接种）",
+          "priceYuan": "211 / 125"
+        }
+      ],
+      "ageMonths": 10,
+      "ageEndMonths": 10
+    },
+    {
+      "age": "11月龄",
+      "free": [],
+      "selfPaid": [
+        {
+          "name": "EV71②",
+          "priceYuan": 211
+        }
+      ],
+      "ageMonths": 11,
+      "ageEndMonths": 11
+    },
+    {
+      "age": "12～15月龄",
+      "free": [],
+      "selfPaid": [
+        {
+          "name": "13价肺炎④（TT / 197）",
+          "priceYuan": "621 / 721"
+        }
+      ],
+      "ageMonths": 12,
+      "ageEndMonths": 15
+    },
+    {
+      "age": "15月龄",
+      "free": [],
+      "selfPaid": [
+        {
+          "name": "水痘①",
+          "priceYuan": 159
+        }
+      ],
+      "ageMonths": 15,
+      "ageEndMonths": 15
+    },
+    {
+      "age": "18～19月龄",
+      "free": [
+        "麻腮风②",
+        "※甲肝灭活①",
+        "※脊灰疫苗（IPV）④",
+        "※百白破④"
+      ],
+      "selfPaid": [
+        {
+          "name": "进口五联④ / 国产四联④ / Hib③",
+          "priceYuan": "661 / 391 / 125",
+          "combinationChoices": [
+            {
+              "name": "国产四联④",
+              "priceYuan": 391
+            },
+            {
+              "name": "进口五联④",
+              "priceYuan": 661
+            }
+          ],
+          "additionalItems": [
+            {
+              "name": "单独接种Hib③",
+              "priceYuan": 125
+            }
+          ]
+        }
+      ],
+      "ageMonths": 18,
+      "ageEndMonths": 19
+    },
+    {
+      "age": "2周岁",
+      "free": [
+        "乙脑②",
+        "甲肝灭活②"
+      ],
+      "selfPaid": [
+        {
+          "name": "乙脑灭活③",
+          "priceYuan": 239
+        },
+        {
+          "name": "23价肺炎",
+          "priceYuan": 271
+        }
+      ],
+      "ageMonths": 24,
+      "ageEndMonths": 24
+    },
+    {
+      "age": "3周岁",
+      "free": [
+        "※流脑A+C①"
+      ],
+      "selfPaid": [
+        {
+          "name": "流脑ACYW①",
+          "priceYuan": 159
+        },
+        {
+          "name": "水痘②",
+          "priceYuan": 159
+        }
+      ],
+      "ageMonths": 36,
+      "ageEndMonths": 36
+    },
+    {
+      "age": "6周岁",
+      "free": [
+        "※流脑A+C②",
+        "百白破⑥"
+      ],
+      "selfPaid": [
+        {
+          "name": "白破、流脑ACYW② / 乙脑灭活④",
+          "priceYuan": "流脑ACYW 159 / 乙脑灭活 239"
+        }
+      ],
+      "ageMonths": 72,
+      "ageEndMonths": 72
+    },
+    {
+      "age": "6月龄～3周岁儿童型；3周岁以上成人型",
+      "free": [
+        "流感疫苗（季节性疫苗，大约每年冬春季）"
+      ],
+      "selfPaid": [
+        {
+          "name": "流感疫苗",
+          "priceYuan": null,
+          "note": "照片注明价格和供应以门诊实际到苗为准，接种时不可指定厂家及规格。"
+        }
+      ],
+      "ageMonths": 6,
+      "ageEndMonths": null,
+      "recurrence": "annual"
+    }
+  ],
+  "clinicNotes": [
+    "所有自费疫苗，家长如有需求，请在登记时提前与登记医生主动提出，由登记医生酌情安排。",
+    "照片标注接种门诊时间：周一、周三、周五全天；周二、周四、周六上午半天，逢节假日除外。",
+    "照片标注咨询电话：83876692。该号码仅作为照片原文保存，未核验当前有效性。"
+  ],
+  "version": "1",
+  "regionSource": "用户确认",
+  "references": [
+    {
+      "title": "浙江省疾控中心《浙江省疫苗接种方案》（2019年）",
+      "url": "https://www.cdc.zj.cn/ywpd/mygh/zcfg/202208/t20220819_6592.shtml"
+    }
+  ],
+  "summary": {
+    "free": [
+      "乙肝疫苗",
+      "卡介苗",
+      "脊灰疫苗（IPV）",
+      "百白破疫苗",
+      "A群流脑疫苗",
+      "麻腮风疫苗",
+      "乙脑疫苗",
+      "甲肝灭活疫苗",
+      "A+C群流脑疫苗",
+      "流感疫苗（按当地免费政策）"
+    ],
+    "selfPaid": [
+      "13价肺炎（TT / 197）",
+      "五价 / 六价轮状病毒疫苗",
+      "国产四联疫苗",
+      "进口五联疫苗",
+      "AC结合疫苗",
+      "ACYW135结合疫苗",
+      "Hib疫苗",
+      "乙脑灭活疫苗",
+      "EV71疫苗",
+      "水痘疫苗",
+      "23价肺炎疫苗",
+      "流脑ACYW疫苗",
+      "白破疫苗",
+      "流感疫苗"
+    ]
+  }
+}

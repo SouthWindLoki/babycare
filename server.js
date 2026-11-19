@@ -1,16 +1,18 @@
 import { medicationNextAt } from './public/medication-schedule.js';
 import { createServer } from 'node:http';
-import { createReadStream, existsSync, mkdirSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { planMethods } from './public/feeding-options.js';
 import { abnormalCategories } from './public/abnormal-options.js';
+import { observationPrompts, observationResponseLabels } from './public/development-prompts.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const port = Number(process.env.PORT || 18744);
 const dataDir = process.env.DATA_DIR || join(__dirname, 'data');
 const publicDir = join(__dirname, 'public');
+const vaccinationSchedule = JSON.parse(readFileSync(join(__dirname, 'docs', 'vaccination-schedule.json'), 'utf8'));
 mkdirSync(dataDir, { recursive: true });
 
 const db = new DatabaseSync(join(dataDir, 'babycare.sqlite'));
@@ -39,7 +41,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS baby_profile (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     name TEXT NOT NULL DEFAULT '',
-    birthday TEXT
+    birthday TEXT,
+    sex TEXT NOT NULL DEFAULT ''
   );
   INSERT OR IGNORE INTO baby_profile (id, name) VALUES (1, '');
   CREATE TABLE IF NOT EXISTS weights (
@@ -58,6 +61,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     occurred_at TEXT NOT NULL,
     note TEXT NOT NULL DEFAULT '',
+    color TEXT NOT NULL DEFAULT '未记录',
     photo BLOB NOT NULL,
     photo_type TEXT NOT NULL
   );
@@ -65,7 +69,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS diapers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     occurred_at TEXT NOT NULL,
-    note TEXT NOT NULL DEFAULT ''
+    note TEXT NOT NULL DEFAULT '',
+    diaper_type TEXT NOT NULL DEFAULT 'wet'
   );
   CREATE INDEX IF NOT EXISTS idx_diapers_time ON diapers (occurred_at DESC);
   CREATE TABLE IF NOT EXISTS abnormalities (
@@ -103,6 +108,24 @@ db.exec(`
     photo_type TEXT
   );
   CREATE INDEX IF NOT EXISTS idx_medications_time ON medications (occurred_at DESC);
+  CREATE TABLE IF NOT EXISTS development_assessments (
+    birthday TEXT NOT NULL,
+    age_months INTEGER NOT NULL CHECK (age_months IN (3, 6, 8, 12, 18, 24, 30, 36)),
+    responses TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (birthday, age_months)
+  );
+  CREATE TABLE IF NOT EXISTS development_observations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    birthday TEXT NOT NULL,
+    observed_on TEXT NOT NULL,
+    prompt_id TEXT NOT NULL,
+    prompt_text TEXT NOT NULL,
+    context TEXT NOT NULL,
+    response TEXT NOT NULL CHECK (response IN ('observed','not_yet','unsure')),
+    note TEXT NOT NULL DEFAULT '',
+    UNIQUE (birthday, observed_on)
+  );
 `);
 // Seed names only on first creation; units depend on the family's actual formulation.
 if(!hadCommonMedicines)db.prepare("INSERT INTO common_medicines (name) VALUES ('维生素AD'),('维生素D3')").run();
@@ -126,6 +149,7 @@ try {
 }
 try { db.exec('ALTER TABLE abnormalities ADD COLUMN photo BLOB'); } catch (error) { if (!String(error.message).includes('duplicate column name')) throw error; }
 try { db.exec('ALTER TABLE abnormalities ADD COLUMN photo_type TEXT'); } catch (error) { if (!String(error.message).includes('duplicate column name')) throw error; }
+try { db.exec("ALTER TABLE stools ADD COLUMN color TEXT NOT NULL DEFAULT '未记录'"); } catch (error) { if (!String(error.message).includes('duplicate column name')) throw error; }
 
 // Rebuild only the old feedings schema, preserving records, IDs, timestamps and sequence.
 if (db.prepare('PRAGMA table_info(feedings)').all().find(column=>column.name==='amount_ml').notnull) {
@@ -151,30 +175,54 @@ if (db.prepare('PRAGMA table_info(feedings)').all().find(column=>column.name==='
   } catch(error) {db.exec('ROLLBACK');throw error;}
 }
 try { db.exec("ALTER TABLE settings ADD COLUMN breast_method TEXT NOT NULL DEFAULT 'direct'"); } catch(error) {if(!String(error.message).includes('duplicate column name'))throw error;}
+for(const column of ['left_duration_seconds','right_duration_seconds']){
+  if(!db.prepare('PRAGMA table_info(feedings)').all().some(item=>item.name===column))db.exec(`ALTER TABLE feedings ADD COLUMN ${column} INTEGER CHECK (${column} IS NULL OR (${column} >= 0 AND ${column} <= 86400))`);
+}
 
 for(const column of ['birth_weight_grams','birth_length_mm']){
   if(!db.prepare('PRAGMA table_info(baby_profile)').all().some(item=>item.name===column))db.exec(`ALTER TABLE baby_profile ADD COLUMN ${column} INTEGER`);
 }
+if(!db.prepare('PRAGMA table_info(baby_profile)').all().some(item=>item.name==='sex'))db.exec("ALTER TABLE baby_profile ADD COLUMN sex TEXT NOT NULL DEFAULT ''");
+if(!db.prepare('PRAGMA table_info(diapers)').all().some(item=>item.name==='diaper_type'))db.exec("ALTER TABLE diapers ADD COLUMN diaper_type TEXT NOT NULL DEFAULT 'unclassified'");
 
 const statements = {
-  list: db.prepare('SELECT id, fed_at, amount_ml, feeding_method, note, created_at FROM feedings ORDER BY fed_at DESC LIMIT ?'),
+  list: db.prepare('SELECT id, fed_at, amount_ml, feeding_method, left_duration_seconds, right_duration_seconds, note, created_at FROM feedings ORDER BY fed_at DESC LIMIT ?'),
   countToday: db.prepare('SELECT COUNT(*) AS count FROM feedings WHERE fed_at >= ? AND fed_at < ?'),
   amountToday: db.prepare('SELECT COALESCE(SUM(amount_ml), 0) AS amount FROM feedings WHERE fed_at >= ? AND fed_at < ?'),
-  feedingWindow: db.prepare("SELECT COUNT(*) AS count, COALESCE(SUM(amount_ml), 0) AS amount, SUM(CASE WHEN feeding_method='direct' THEN 1 ELSE 0 END) AS direct_count FROM feedings WHERE fed_at > ? AND fed_at <= ?"),
+  feedingWindow: db.prepare(`SELECT COUNT(*) AS count, COALESCE(SUM(amount_ml), 0) AS amount,
+    SUM(CASE WHEN feeding_method='direct' THEN 1 ELSE 0 END) AS direct_count,
+    SUM(CASE WHEN feeding_method='direct' AND left_duration_seconds IS NOT NULL AND right_duration_seconds IS NOT NULL THEN 1 ELSE 0 END) AS timed_direct_count,
+    COALESCE(SUM(CASE WHEN feeding_method='direct' THEN left_duration_seconds ELSE 0 END),0) AS left_seconds,
+    COALESCE(SUM(CASE WHEN feeding_method='direct' THEN right_duration_seconds ELSE 0 END),0) AS right_seconds,
+    MIN(fed_at) AS first_at, MAX(fed_at) AS last_at FROM feedings WHERE fed_at > ? AND fed_at <= ?`),
   todayFeedingTimes: db.prepare('SELECT fed_at FROM feedings WHERE fed_at >= ? AND fed_at < ? ORDER BY fed_at ASC'),
   stoolCountToday: db.prepare('SELECT COUNT(*) AS count FROM stools WHERE occurred_at >= ? AND occurred_at < ?'),
-  diaperCountToday: db.prepare('SELECT COUNT(*) AS count FROM diapers WHERE occurred_at >= ? AND occurred_at < ?'),
-  latest: db.prepare('SELECT id, fed_at, amount_ml, feeding_method, note, created_at FROM feedings ORDER BY fed_at DESC LIMIT 1'),
-  create: db.prepare('INSERT INTO feedings (fed_at, amount_ml, feeding_method, note) VALUES (?, ?, ?, ?)'),
+  stoolCountWindow: db.prepare('SELECT COUNT(*) AS count FROM stools WHERE occurred_at > ? AND occurred_at <= ?'),
+  diaperCountToday: db.prepare("SELECT COUNT(*) AS count FROM diapers WHERE diaper_type='wet' AND occurred_at > ? AND occurred_at <= ?"),
+  latest: db.prepare('SELECT id, fed_at, amount_ml, feeding_method, left_duration_seconds, right_duration_seconds, note, created_at FROM feedings ORDER BY fed_at DESC LIMIT 1'),
+  latestDirect: db.prepare("SELECT id, fed_at, left_duration_seconds, right_duration_seconds FROM feedings WHERE feeding_method='direct' AND fed_at<=? ORDER BY fed_at DESC, id DESC LIMIT 1"),
+  create: db.prepare('INSERT INTO feedings (fed_at, amount_ml, feeding_method, left_duration_seconds, right_duration_seconds, note) VALUES (?, ?, ?, ?, ?, ?)'),
   remove: db.prepare('DELETE FROM feedings WHERE id = ?'),
   settings: db.prepare('SELECT interval_hours, amount_ml, feeding_type, breast_method, formula_brand, formula_stage FROM settings WHERE id = 1'),
   updateSettings: db.prepare('UPDATE settings SET interval_hours = ?, amount_ml = ?, feeding_type = ?, formula_brand = ?, formula_stage = ?, breast_method = ? WHERE id = 1'),
-  profile: db.prepare('SELECT name, birthday, birth_weight_grams, birth_length_mm FROM baby_profile WHERE id = 1'),
-  updateProfile: db.prepare('UPDATE baby_profile SET name = ?, birthday = ?, birth_weight_grams = ?, birth_length_mm = ? WHERE id = 1'),
+  profile: db.prepare('SELECT name, birthday, birth_weight_grams, birth_length_mm, sex FROM baby_profile WHERE id = 1'),
+  updateProfile: db.prepare('UPDATE baby_profile SET name = ?, birthday = ?, birth_weight_grams = ?, birth_length_mm = ?, sex = ? WHERE id = 1'),
   weights: db.prepare('SELECT id, measured_on, weight_grams, recorded_at FROM weights ORDER BY measured_on DESC LIMIT 30'),
   saveWeight: db.prepare("INSERT INTO weights (measured_on, weight_grams, recorded_at) VALUES (?, ?, datetime('now')) ON CONFLICT(measured_on) DO UPDATE SET weight_grams = excluded.weight_grams, recorded_at = excluded.recorded_at"),
   removeWeight: db.prepare('DELETE FROM weights WHERE id = ?'),
   lengths: db.prepare('SELECT id, measured_on, length_mm, recorded_at FROM lengths ORDER BY measured_on DESC LIMIT 30'),
+  weightLogs: db.prepare(`SELECT * FROM (
+    SELECT id, measured_on, weight_grams, recorded_at,
+      LAG(weight_grams) OVER (ORDER BY measured_on) AS previous_weight_grams,
+      LAG(measured_on) OVER (ORDER BY measured_on) AS previous_measured_on
+    FROM weights
+  ) WHERE measured_on >= ? AND measured_on <= ? ORDER BY measured_on DESC`),
+  lengthLogs: db.prepare(`SELECT * FROM (
+    SELECT id, measured_on, length_mm, recorded_at,
+      LAG(length_mm) OVER (ORDER BY measured_on) AS previous_length_mm,
+      LAG(measured_on) OVER (ORDER BY measured_on) AS previous_measured_on
+    FROM lengths
+  ) WHERE measured_on >= ? AND measured_on <= ? ORDER BY measured_on DESC`),
   saveLength: db.prepare("INSERT INTO lengths (measured_on, length_mm, recorded_at) VALUES (?, ?, datetime('now')) ON CONFLICT(measured_on) DO UPDATE SET length_mm = excluded.length_mm, recorded_at = excluded.recorded_at"),
   removeLength: db.prepare('DELETE FROM lengths WHERE id = ?'),
   abnormalities: db.prepare('SELECT id, occurred_at, observations, note, photo IS NOT NULL AS has_photo FROM abnormalities ORDER BY occurred_at DESC LIMIT 50'),
@@ -185,12 +233,12 @@ const statements = {
   saveMedication: db.prepare('INSERT INTO medications (occurred_at, medicines, note, photo, photo_type) VALUES (?, ?, ?, ?, ?)'),
   medicationPhoto: db.prepare('SELECT photo, photo_type FROM medications WHERE id = ?'),
   removeMedication: db.prepare('DELETE FROM medications WHERE id = ?'),
-  stools: db.prepare('SELECT id, occurred_at, note, length(photo) > 0 AS has_photo FROM stools ORDER BY occurred_at DESC LIMIT 50'),
-  saveStool: db.prepare('INSERT INTO stools (occurred_at, note, photo, photo_type) VALUES (?, ?, ?, ?)'),
+  stools: db.prepare('SELECT id, occurred_at, note, color, length(photo) > 0 AS has_photo FROM stools ORDER BY occurred_at DESC LIMIT 50'),
+  saveStool: db.prepare('INSERT INTO stools (occurred_at, note, color, photo, photo_type) VALUES (?, ?, ?, ?, ?)'),
   stoolPhoto: db.prepare('SELECT photo, photo_type FROM stools WHERE id = ?'),
   removeStool: db.prepare('DELETE FROM stools WHERE id = ?')
-  ,diapers: db.prepare('SELECT id, occurred_at, note FROM diapers ORDER BY occurred_at DESC LIMIT 50')
-  ,saveDiaper: db.prepare('INSERT INTO diapers (occurred_at, note) VALUES (?, ?)')
+  ,diapers: db.prepare('SELECT id, occurred_at, note, diaper_type FROM diapers ORDER BY occurred_at DESC LIMIT 50')
+  ,saveDiaper: db.prepare("INSERT INTO diapers (occurred_at, note, diaper_type) VALUES (?, ?, 'wet')")
   ,removeDiaper: db.prepare('DELETE FROM diapers WHERE id = ?')
 };
 
@@ -305,6 +353,7 @@ function summary(req) {
   const todayThroughNow=statements.feedingWindow.get(new Date(Date.parse(rangeStart)-1).toISOString(),[rangeEnd,rollingEnd].sort()[0]);
   return {
     latest,
+    latestDirect: statements.latestDirect.get(rollingEnd) || null,
     intervalHours,
     amountMl,
     feedingType: settings.feeding_type,
@@ -316,14 +365,27 @@ function summary(req) {
     todayRecordedAmount:Number(todayThroughNow.amount),
     todayRecordedCount:Number(todayThroughNow.count),
     todayDirectCount:Number(todayThroughNow.direct_count||0),
+    todayBottleCount:Number(todayThroughNow.count)-Number(todayThroughNow.direct_count||0),
+    todayTimedDirectCount:Number(todayThroughNow.timed_direct_count||0),
+    todayLeftDurationSeconds:Number(todayThroughNow.left_seconds),
+    todayRightDurationSeconds:Number(todayThroughNow.right_seconds),
     last24HoursAmount:Number(rolling.amount),
     last24HoursCount:Number(rolling.count),
+    last24HoursAverageIntervalHours: Number(rolling.count) > 1
+      ? Number(((Date.parse(rolling.last_at) - Date.parse(rolling.first_at)) / (Number(rolling.count) - 1) / 3600000).toFixed(1))
+      : null,
     last24HoursDirectCount:Number(rolling.direct_count||0),
+    last24HoursBottleCount:Number(rolling.count)-Number(rolling.direct_count||0),
+    last24HoursTimedDirectCount:Number(rolling.timed_direct_count||0),
+    last24HoursLeftDurationSeconds:Number(rolling.left_seconds),
+    last24HoursRightDurationSeconds:Number(rolling.right_seconds),
     last24HoursStart:rollingStart,
     last24HoursEnd:rollingEnd,
     todayAverageIntervalHours: averageIntervalHours,
     todayStoolCount: Number(statements.stoolCountToday.get(rangeStart, rangeEnd).count),
-    todayDiaperCount: Number(statements.diaperCountToday.get(rangeStart, rangeEnd).count),
+    last24HoursStoolCount: Number(statements.stoolCountWindow.get(rollingStart, rollingEnd).count),
+    last24HoursWetDiaperCount: Number(statements.diaperCountToday.get(rollingStart, rollingEnd).count),
+    todayDiaperCount: Number(statements.diaperCountToday.get(rollingStart, rollingEnd).count),
     nextAt: latest ? new Date(new Date(latest.fed_at).getTime() + intervalHours * 60 * 60 * 1000).toISOString() : null
   };
 }
@@ -335,6 +397,60 @@ function medicationPlans() {
 }
 
 async function handleApi(req, res, url) {
+  if (url.pathname === '/api/references/vaccination-schedule' && req.method === 'GET') {
+    return json(res, 200, { schedule: vaccinationSchedule });
+  }
+  if (url.pathname === '/api/development-assessments' && req.method === 'GET') {
+    const assessments = Object.fromEntries(db.prepare('SELECT age_months, responses FROM development_assessments WHERE birthday=?').all(statements.profile.get().birthday ?? '')
+      .map(row => [row.age_months, JSON.parse(row.responses)]));
+    return json(res, 200, { assessments });
+  }
+  if (url.pathname === '/api/development-observations' && ['GET', 'POST'].includes(req.method)) {
+    const birthday = statements.profile.get().birthday;
+    const listObservations = () => db.prepare(`SELECT id, observed_on AS observedOn, prompt_id AS promptId,
+      prompt_text AS promptText, context, response, note FROM development_observations WHERE birthday=? ORDER BY observed_on DESC LIMIT 30`).all(birthday ?? '');
+    if (req.method === 'GET') return json(res, 200, { birthday, observations: listObservations() });
+    const body = await readBody(req);
+    if (!birthday || body?.birthday !== birthday) return json(res, 409, { error: '宝宝资料已变更或尚未配置，请刷新后再记录' });
+    const day = today(req);
+    const prompt = observationPrompts(birthday, day).find(item => item.id === body.promptId);
+    if (!prompt || !Object.hasOwn(observationResponseLabels, body.response) || (body.note !== undefined && (typeof body.note !== 'string' || body.note.trim().length > 300))) {
+      return json(res, 400, { error: '请选择适合宝宝当前阶段的观察项目和状态，备注不超过300字' });
+    }
+    const saved = db.prepare(`INSERT OR IGNORE INTO development_observations (birthday, observed_on, prompt_id, prompt_text, context, response, note) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+      .run(birthday, day, prompt.id, prompt.text, prompt.context, body.response, body.note?.trim() ?? '');
+    return json(res, saved.changes ? 201 : 200, { birthday, observations: listObservations() });
+  }
+  const developmentAssessmentMatch = url.pathname.match(/^\/api\/development-assessments\/(\d+)$/);
+  if (developmentAssessmentMatch && req.method === 'PUT') {
+    const ageMonths = Number(developmentAssessmentMatch[1]);
+    const body = await readBody(req);
+    const birthday = statements.profile.get().birthday;
+    if (!birthday || body.birthday !== birthday) return json(res, 409, { error: '宝宝资料已变更或尚未配置，请刷新并核对生日后再记录' });
+    const responses = body.responses;
+    if (![3, 6, 8, 12, 18, 24, 30, 36].includes(ageMonths) || !Array.isArray(responses) || responses.length !== 5 || !responses.every(value => ['yes', 'no', 'unsure'].includes(value))) {
+      return json(res, 400, { error: '请为该月龄的5项发育标志选择有效状态' });
+    }
+    db.prepare(`INSERT INTO development_assessments (birthday, age_months, responses, updated_at) VALUES (?, ?, ?, datetime('now'))
+      ON CONFLICT(birthday, age_months) DO UPDATE SET responses=excluded.responses, updated_at=excluded.updated_at`)
+      .run(birthday, ageMonths, JSON.stringify(responses));
+    return json(res, 200, { ageMonths, responses });
+  }
+  const eventMatch=url.pathname.match(/^\/api\/(records|weights|lengths|stools|diapers|medications|abnormalities)\/(\d+)$/);
+  const eventKind=eventMatch?.[1],eventId=Number(eventMatch?.[2]);
+  const eventTables={records:'feedings',weights:'weights',lengths:'lengths',stools:'stools',diapers:'diapers',medications:'medications',abnormalities:'abnormalities'};
+  const editing=eventMatch&&req.method==='PUT';
+  const original=eventMatch&&['GET','PUT'].includes(req.method)?db.prepare(`SELECT * FROM ${eventTables[eventKind]} WHERE id=?`).get(eventId):null;
+  if(eventMatch&&['GET','PUT'].includes(req.method)&&!original)return json(res,404,{error:'这条记录不存在，可能已被删除，请返回记录列表刷新'});
+  if(eventMatch&&req.method==='GET'){
+    const {photo,photo_type,...record}=original;
+    if(['stools','medications','abnormalities'].includes(eventKind))record.has_photo=Boolean(photo?.length);
+    if(eventKind==='medications')record.medicines=JSON.parse(record.medicines);
+    if(eventKind==='abnormalities')record.observations=JSON.parse(record.observations);
+    return json(res,200,{record});
+  }
+  // 编辑时未提交照片字段就保留原图；明确传空值才删除。
+  const eventPhoto=body=>editing&&body.photo===undefined?{photo:original.photo,type:original.photo_type}:photoFromData(body.photo);
   if(url.pathname==='/api/medication-plans'&&req.method==='GET')return json(res,200,{plans:medicationPlans()});
   const planMatch=url.pathname.match(/^\/api\/medication-plans\/(\d+)$/);
   if((url.pathname==='/api/medication-plans'&&req.method==='POST')||(planMatch&&req.method==='PUT')){
@@ -383,19 +499,20 @@ async function handleApi(req, res, url) {
       return json(res, 400, { error: '请选择有效的开始和结束日期' });
     }
     return json(res, 200, {
-      records: db.prepare('SELECT id, fed_at, amount_ml, feeding_method, note FROM feedings WHERE fed_at >= ? AND fed_at < ? ORDER BY fed_at DESC').all(start, end),
-      weights: db.prepare('SELECT id, measured_on, weight_grams, recorded_at FROM weights WHERE measured_on >= ? AND measured_on <= ? ORDER BY measured_on DESC').all(fromDay, toDay),
-      lengths: db.prepare('SELECT id, measured_on, length_mm, recorded_at FROM lengths WHERE measured_on >= ? AND measured_on <= ? ORDER BY measured_on DESC').all(fromDay, toDay),
+      records: db.prepare('SELECT id, fed_at, amount_ml, feeding_method, left_duration_seconds, right_duration_seconds, note FROM feedings WHERE fed_at >= ? AND fed_at < ? ORDER BY fed_at DESC').all(start, end),
+      weights: statements.weightLogs.all(fromDay, toDay),
+      lengths: statements.lengthLogs.all(fromDay, toDay),
       abnormalities: db.prepare('SELECT id, occurred_at, observations, note, photo IS NOT NULL AS has_photo FROM abnormalities WHERE occurred_at >= ? AND occurred_at < ? ORDER BY occurred_at DESC').all(start, end).map(readAbnormality),
       medications: db.prepare('SELECT id, occurred_at, medicines, note, photo IS NOT NULL AS has_photo FROM medications WHERE occurred_at >= ? AND occurred_at < ? ORDER BY occurred_at DESC').all(start, end).map(readMedication),
-      stools: db.prepare('SELECT id, occurred_at, note, length(photo) > 0 AS has_photo FROM stools WHERE occurred_at >= ? AND occurred_at < ? ORDER BY occurred_at DESC').all(start, end),
-      diapers: db.prepare('SELECT id, occurred_at, note FROM diapers WHERE occurred_at >= ? AND occurred_at < ? ORDER BY occurred_at DESC').all(start, end)
+      stools: db.prepare('SELECT id, occurred_at, note, color, length(photo) > 0 AS has_photo FROM stools WHERE occurred_at >= ? AND occurred_at < ? ORDER BY occurred_at DESC').all(start, end),
+      diapers: db.prepare('SELECT id, occurred_at, note, diaper_type FROM diapers WHERE occurred_at >= ? AND occurred_at < ? ORDER BY occurred_at DESC').all(start, end)
     });
   }
   if (url.pathname === '/api/abnormalities' && req.method === 'GET') return json(res, 200, {abnormalities:statements.abnormalities.all().map(readAbnormality)});
-  if (url.pathname === '/api/abnormalities' && req.method === 'POST') {
-    const body=await readBody(req),observations=validateObservations(body.observations),photo=photoFromData(body.photo);
+  if (url.pathname === '/api/abnormalities' && req.method === 'POST' || editing&&eventKind==='abnormalities') {
+    const body=await readBody(req),observations=validateObservations(body.observations),photo=eventPhoto(body);
     if (!validDate(body.occurredAt) || !observations || photo===null || (body.note!==undefined && typeof body.note!=='string') || (body.note?.trim().length||0)>1000) return json(res,400,{error:'请填写有效发现时间和具体异常表现；体温需填写实测值及测量部位；照片格式需为清晰的图片'});
+    if(editing){db.prepare('UPDATE abnormalities SET occurred_at=?,observations=?,note=?,photo=?,photo_type=? WHERE id=?').run(body.occurredAt,JSON.stringify(observations),body.note?.trim()||'',photo.photo,photo.type,eventId);return json(res,200,{id:eventId});}
     const result=statements.saveAbnormality.run(body.occurredAt,JSON.stringify(observations),body.note?.trim()||'',photo.photo,photo.type);
     return json(res,201,{id:Number(result.lastInsertRowid)});
   }
@@ -410,12 +527,13 @@ async function handleApi(req, res, url) {
     statements.removeAbnormality.run(Number(abnormalMatch[1]));return json(res,200,{abnormalities:statements.abnormalities.all().map(readAbnormality)});
   }
   if (url.pathname === '/api/medications' && req.method === 'GET') return json(res, 200, {medications:statements.medications.all().map(readMedication)});
-  if (url.pathname === '/api/medications' && req.method === 'POST') {
-    const body=await readBody(req),photo=photoFromData(body.photo);
+  if (url.pathname === '/api/medications' && req.method === 'POST' || editing&&eventKind==='medications') {
+    const body=await readBody(req),photo=eventPhoto(body);
     const medicines=Array.isArray(body.medicines)&&body.medicines.length>0&&body.medicines.length<=20?body.medicines.map(item=>({name:typeof item?.name==='string'?item.name.trim():'',dose:typeof item?.dose==='string'?item.dose.trim():'',...(item?.medicineId!==undefined?{medicineId:item.medicineId}:{}),...(item?.unit!==undefined?{unit:typeof item.unit==='string'?item.unit.trim():''}:{})})):null;
     const validMedicines=medicines&&medicines.every((item,index)=>item.name.length>0&&item.name.length<=50&&(item.medicineId===undefined||(Number.isInteger(item.medicineId)&&Boolean(db.prepare('SELECT id FROM common_medicines WHERE id=?').get(item.medicineId))))&&item.dose.length<=50&&(body.medicines[index]?.unit===undefined||(typeof body.medicines[index].unit==='string'&&body.medicines[index].unit.trim().length<=12))&&(body.medicines[index]?.dose===undefined||typeof body.medicines[index]?.dose==='string'));
     const note=typeof body.note==='string'?body.note.trim().slice(0,1000):'';
     if(!validDate(body.occurredAt)||!validMedicines||photo===null||(body.note!==undefined&&typeof body.note!=='string')||(body.note?.trim().length||0)>1000) return json(res,400,{error:'请填写有效用药时间和药品名称，剂量为选填文字，备注不超过1000字，照片格式需为清晰的图片'});
+    if(editing){db.prepare('UPDATE medications SET occurred_at=?,medicines=?,note=?,photo=?,photo_type=? WHERE id=?').run(body.occurredAt,JSON.stringify(medicines),note,photo.photo,photo.type,eventId);return json(res,200,{id:eventId});}
     const result=statements.saveMedication.run(body.occurredAt,JSON.stringify(medicines),note,photo.photo,photo.type);
     return json(res,201,{id:Number(result.lastInsertRowid)});
   }
@@ -430,10 +548,11 @@ async function handleApi(req, res, url) {
     statements.removeMedication.run(Number(medicationMatch[1]));return json(res,200,{medications:statements.medications.all().map(readMedication)});
   }
   if (url.pathname === '/api/diapers' && req.method === 'GET') return json(res, 200, { diapers: statements.diapers.all() });
-  if (url.pathname === '/api/diapers' && req.method === 'POST') {
+  if (url.pathname === '/api/diapers' && req.method === 'POST' || editing&&eventKind==='diapers') {
     const body = await readBody(req);
-    if (!validDate(body.occurredAt)) return json(res, 400, { error: '请填写换尿布时间' });
+    if (!validDate(body.occurredAt)) return json(res, 400, { error: '请填写湿尿布更换时间' });
     const note = typeof body.note === 'string' ? body.note.trim().slice(0, 160) : '';
+    if(editing){db.prepare('UPDATE diapers SET occurred_at=?,note=? WHERE id=?').run(body.occurredAt,note,eventId);return json(res,200,{id:eventId});}
     const result = statements.saveDiaper.run(body.occurredAt, note);
     return json(res, 201, { id: Number(result.lastInsertRowid) });
   }
@@ -442,14 +561,17 @@ async function handleApi(req, res, url) {
   if (url.pathname === '/api/stools' && req.method === 'GET') {
     return json(res, 200, { stools: statements.stools.all() });
   }
-  if (url.pathname === '/api/stools' && req.method === 'POST') {
+  if (url.pathname === '/api/stools' && req.method === 'POST' || editing&&eventKind==='stools') {
     const body = await readBody(req);
     if (!validDate(body.occurredAt)) return json(res, 400, { error: '请填写有效的排便时间' });
-    const photo = photoFromData(body.photo);
+    const photo = eventPhoto(body);
     if (!photo) return json(res, 400, { error: '照片格式不支持或过大，请重新拍照或选择照片' });
+    const colors = ['墨绿色','黄绿色','黄色','棕黄色','棕色','黑色','灰白色','红色','其他','未记录'];
+    const color = typeof body.color === 'string' && colors.includes(body.color) ? body.color : '未记录';
     const note = typeof body.note === 'string' ? body.note.trim().slice(0, 160) : '';
     // Empty bytes represent an optional photo and keep existing database constraints intact.
-    const result = statements.saveStool.run(body.occurredAt, note, photo.photo || Buffer.alloc(0), photo.type || '');
+    if(editing){db.prepare('UPDATE stools SET occurred_at=?,note=?,color=?,photo=?,photo_type=? WHERE id=?').run(body.occurredAt,note,color,photo.photo||Buffer.alloc(0),photo.type||'',eventId);return json(res,200,{id:eventId});}
+    const result = statements.saveStool.run(body.occurredAt, note, color, photo.photo || Buffer.alloc(0), photo.type || '');
     return json(res, 201, { id: Number(result.lastInsertRowid) });
   }
   const photoMatch = url.pathname.match(/^\/api\/stools\/(\d+)\/photo$/);
@@ -477,17 +599,22 @@ async function handleApi(req, res, url) {
     const birthWeight=body.birthWeightGrams===undefined?previous.birth_weight_grams:body.birthWeightGrams;
     const birthLength=body.birthLengthCm===undefined?previous.birth_length_mm:body.birthLengthCm===null?null:typeof body.birthLengthCm==='number'?Math.round(body.birthLengthCm*10):NaN;
     if((birthWeight!==null&&(!Number.isInteger(birthWeight)||birthWeight<100||birthWeight>100000))||(birthLength!==null&&(!Number.isInteger(birthLength)||birthLength<100||birthLength>2500))||(body.birthLengthCm!==undefined&&body.birthLengthCm!==null&&(typeof body.birthLengthCm!=='number'||Math.abs(body.birthLengthCm*10-birthLength)>1e-8)))return json(res,400,{error:'出生体重请填写100～100000克的整数，出生身长请填写10～250厘米，最多一位小数；两项均可留空'});
-    statements.updateProfile.run(name, body.birthday,birthWeight,birthLength);
+    const sex = body.sex === undefined ? (previous.sex || '') : body.sex;
+    if(!['','male','female'].includes(sex))return json(res,400,{error:'性别请选择男童、女童或暂不设置'});
+    statements.updateProfile.run(name, body.birthday,birthWeight,birthLength,sex);
     return json(res, 200, { baby: statements.profile.get() });
   }
   if (url.pathname === '/api/lengths' && req.method === 'GET') return json(res, 200, { lengths: statements.lengths.all() });
-  if (url.pathname === '/api/lengths' && req.method === 'PUT') {
+  if (url.pathname === '/api/lengths' && req.method === 'PUT' || editing&&eventKind==='lengths') {
     const body = await readBody(req);
     const millimeters = Math.round(body.lengthCm * 10);
     if (!validDay(body.measuredOn) || body.measuredOn > today(req) || typeof body.lengthCm !== 'number' || !Number.isFinite(body.lengthCm) || body.lengthCm < 10 || body.lengthCm > 250 || Math.abs(body.lengthCm * 10 - millimeters) > 1e-8) {
       return json(res, 400, { error: '请填写有效测量日期和 10-250 厘米的身长，最多一位小数，日期不能晚于今天' });
     }
-    statements.saveLength.run(body.measuredOn, millimeters);
+    if(editing){
+      if(db.prepare('SELECT id FROM lengths WHERE measured_on=? AND id!=?').get(body.measuredOn,eventId))return json(res,409,{error:'这一天已有身长记录，请选择其他日期或编辑当天那条记录'});
+      db.prepare("UPDATE lengths SET measured_on=?,length_mm=?,recorded_at=datetime('now') WHERE id=?").run(body.measuredOn,millimeters,eventId);
+    }else statements.saveLength.run(body.measuredOn, millimeters);
     return json(res, 200, { lengths: statements.lengths.all() });
   }
   const lengthMatch = url.pathname.match(/^\/api\/lengths\/(\d+)$/);
@@ -498,12 +625,15 @@ async function handleApi(req, res, url) {
   if (url.pathname === '/api/weights' && req.method === 'GET') {
     return json(res, 200, { weights: statements.weights.all() });
   }
-  if (url.pathname === '/api/weights' && req.method === 'PUT') {
+  if (url.pathname === '/api/weights' && req.method === 'PUT' || editing&&eventKind==='weights') {
     const body = await readBody(req);
     if (!validDay(body.measuredOn) || body.measuredOn > today(req) || !Number.isInteger(body.weightGrams) || body.weightGrams < 100 || body.weightGrams > 100000) {
       return json(res, 400, { error: '请填写有效称重日期和 100-100000 克 的体重，日期不能晚于今天' });
     }
-    statements.saveWeight.run(body.measuredOn, body.weightGrams);
+    if(editing){
+      if(db.prepare('SELECT id FROM weights WHERE measured_on=? AND id!=?').get(body.measuredOn,eventId))return json(res,409,{error:'这一天已有体重记录，请选择其他日期或编辑当天那条记录'});
+      db.prepare("UPDATE weights SET measured_on=?,weight_grams=?,recorded_at=datetime('now') WHERE id=?").run(body.measuredOn,body.weightGrams,eventId);
+    }else statements.saveWeight.run(body.measuredOn, body.weightGrams);
     return json(res, 200, { weights: statements.weights.all() });
   }
   const weightMatch = url.pathname.match(/^\/api\/weights\/(\d+)$/);
@@ -514,20 +644,25 @@ async function handleApi(req, res, url) {
   if (url.pathname === '/api/records' && req.method === 'GET') {
     return json(res, 200, { records: statements.list.all(50), summary: summary(req) });
   }
-  if (url.pathname === '/api/records' && req.method === 'POST') {
+  if (url.pathname === '/api/records' && req.method === 'POST' || editing&&eventKind==='records') {
     const body = await readBody(req);
     const settings=statements.settings.get();
     const allowed=planMethods(settings.feeding_type,settings.breast_method);
     if(body.feedingMethod===undefined && settings.feeding_type==='mixed')return json(res,400,{error:'混合喂养请先选择本次喂法'});
     const method=body.feedingMethod===undefined?allowed[0]:body.feedingMethod;
     const amount=method==='direct'?null:body.amountMl;
-    if (!validDate(body.fedAt) || !['direct','breast_bottle','formula'].includes(method) || method==='direct'&&body.amountMl!==undefined&&body.amountMl!==null || method!=='direct'&&(typeof amount!=='number'||!Number.isInteger(amount)||amount<1||amount>2000)) {
+    if (!validDate(body.fedAt) || !['direct','breast_bottle','formula',...(editing?['unknown']:[])].includes(method) || method==='direct'&&body.amountMl!==undefined&&body.amountMl!==null || method!=='direct'&&(typeof amount!=='number'||!Number.isInteger(amount)||amount<1||amount>2000)) {
       return json(res,400,{error:'请填写有效喂奶时间；亲喂不填写毫升数，瓶喂请填写 1～2000 毫升的实际奶量'});
     }
     const note = typeof body.note === 'string' ? body.note.trim().slice(0,160) : '';
-    const result=statements.create.run(body.fedAt,amount,method,note);
-    const record = db.prepare('SELECT id, fed_at, amount_ml, feeding_method, note, created_at FROM feedings WHERE id = ?').get(Number(result.lastInsertRowid));
-    return json(res, 201, { record, summary: summary(req) });
+    const hasDuration=body.leftDurationSeconds!=null||body.rightDurationSeconds!=null;
+    const left=hasDuration?(body.leftDurationSeconds??0):null,right=hasDuration?(body.rightDurationSeconds??0):null;
+    if(hasDuration&&(method!=='direct'||![left,right].every(value=>Number.isInteger(value)&&value>=0&&value<=86400)||left+right>86400))return json(res,400,{error:'亲喂时长请填写有效秒数，总时长不能超过24小时；瓶喂不记录左右侧时长'});
+    let id=eventId;
+    if(editing)db.prepare('UPDATE feedings SET fed_at=?,amount_ml=?,feeding_method=?,left_duration_seconds=?,right_duration_seconds=?,note=? WHERE id=?').run(body.fedAt,amount,method,left,right,note,eventId);
+    else id=Number(statements.create.run(body.fedAt,amount,method,left,right,note).lastInsertRowid);
+    const record = db.prepare('SELECT id, fed_at, amount_ml, feeding_method, left_duration_seconds, right_duration_seconds, note, created_at FROM feedings WHERE id = ?').get(id);
+    return json(res, editing?200:201, { record, summary: summary(req) });
   }
   const recordMatch = url.pathname.match(/^\/api\/records\/(\d+)$/);
   if (recordMatch && req.method === 'DELETE') {

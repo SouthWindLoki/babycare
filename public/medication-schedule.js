@@ -1,11 +1,21 @@
 // Calculate references only; recording a dose never implies a dose recommendation.
+export function medicationPlansForWindow(plans, now = new Date()) {
+  const current = now.getTime();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const nextDay = current + 24 * 60 * 60 * 1000;
+  return plans.filter(plan => {
+    const nextAt = Date.parse(plan.nextAt);
+    return plan.enabled && Number.isFinite(nextAt) && nextAt >= todayStart && nextAt <= nextDay;
+  }).sort((a, b) => Date.parse(a.nextAt) - Date.parse(b.nextAt) || a.id - b.id);
+}
+
 export function medicationNextAt(plan, records, now=new Date()) {
   if(!plan.enabled)return null;
   const current=now.getTime(),start=Date.parse(plan.start_at);
   const times=records.filter(row=>Date.parse(row.occurred_at)<=current&&row.medicines.some(item=>item.medicineId?item.medicineId===plan.medicine_id:item.name===plan.name)).map(row=>Date.parse(row.occurred_at)).sort((a,b)=>b-a);
   if(plan.mode==='interval') {
-    const latest=times.find(time=>time>=start);
-    return new Date(latest===undefined?start:latest+plan.interval_hours*3600000).toISOString();
+    const latest=times[0];
+    return new Date(latest===undefined?start:Math.max(start,latest+plan.interval_hours*3600000)).toISOString();
   }
   const offset=plan.timezone_offset*60000;
   const localNow=new Date(current-offset);

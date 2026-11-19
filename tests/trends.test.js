@@ -1,6 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { trendKeys, trendQuery, trendValue } from '../public/trends.js';
+import { trendKeys, trendQuery, trendValue, growthTrendDate } from '../public/trends.js';
+
+test('月视图参考采用该指标最后实测日，体重身长日期独立，不误用月初年龄',()=>{
+  const logs={weights:[{measured_on:'2026-10-29'},{measured_on:'2026-11-02'},{measured_on:'2026-11-13'}],lengths:[{measured_on:'2026-11-11'}]};
+  const now=new Date(2026,10,13,12);
+  assert.equal(growthTrendDate(logs,'weight','month','2026-11',now),'2026-11-13');
+  assert.equal(growthTrendDate(logs,'length','month','2026-11',now),'2026-11-11');
+  assert.equal(growthTrendDate(logs,'weight','month','2026-10',now),'2026-10-29');
+  assert.equal(growthTrendDate(logs,'length','month','2026-10',now),'2026-10-31');
+  assert.equal(growthTrendDate({weights:[]},'weight','month','2026-11',now),'2026-11-13');
+  assert.equal(growthTrendDate(logs,'weight','day','2026-11-01',now),'2026-11-01');
+});
 
 test('趋势日期跨年、月末仍按本地自然日和自然月取范围',()=>{
   const now=new Date(2026,0,15,12);

@@ -3,10 +3,20 @@ let toastTimer;
 export function localInputValue(date = new Date()) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 }
-export function formatDate(value, options = {}) {
-  return new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', ...options }).format(new Date(value));
+export function formatDate(value) {
+  return formatDayLabel(value);
 }
 export function formatTime(value) { return new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(value)); }
+export function formatDayLabel(value, reference = new Date()) {
+  const date = new Date(typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T12:00:00` : value);
+  if (Number.isNaN(date.getTime())) return '';
+  const dateStart = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const referenceStart = Date.UTC(reference.getFullYear(), reference.getMonth(), reference.getDate());
+  const difference = (dateStart - referenceStart) / 86400000;
+  const description = difference === 0 ? '今天' : difference === -1 ? '昨天' : difference === 1 ? '明天' : '';
+  const fullDate = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+  return description ? `${description} · ${fullDate}` : fullDate;
+}
 export function showToast(message) {
   clearTimeout(toastTimer);
   const toast = $('#toast'); toast.textContent = message; toast.classList.add('show');

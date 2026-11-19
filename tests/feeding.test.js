@@ -9,7 +9,8 @@ import { once } from 'node:events';
 import { feedingValue,exportFeedingAmount,planMethods } from '../public/feeding-options.js';
 
 test('显示和导出亲喂为未计量，旧记录不推断喂法',()=>{
-  assert.equal(feedingValue({feeding_method:'direct',amount_ml:null}),'母乳亲喂 · 仅记时间');
+  assert.equal(feedingValue({feeding_method:'direct',amount_ml:null}),'母乳亲喂 · 未记时长');
+  assert.equal(feedingValue({feeding_method:'direct',left_duration_seconds:600,right_duration_seconds:305}),'母乳亲喂 · 左 10 分 · 右 5 分 5 秒');
   assert.equal(exportFeedingAmount({feeding_method:'direct',amount_ml:null}),'亲喂（未计量）');
   assert.equal(feedingValue({feeding_method:'breast_bottle',amount_ml:70}),'瓶喂母乳 · 70 毫升');
   assert.equal(feedingValue({feeding_method:'unknown',amount_ml:70}),'70 毫升');
@@ -39,11 +40,20 @@ test('旧数据库迁移保留奶量、时间、ID和自增序列，重启后亲
   try {
     let base=await start();
     const records=(await (await fetch(base+'/api/records')).json()).records;
-    assert.deepEqual(records[0],{id:7,fed_at:'2026-11-11T00:30:00.000Z',amount_ml:70,feeding_method:'unknown',note:'旧记录',created_at:'2026-11-11 00:31:00'});
-    const response=await fetch(base+'/api/records',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fedAt:'2026-11-11T01:30:00.000Z',feedingMethod:'direct'})});
+    assert.deepEqual(records[0],{id:7,fed_at:'2026-11-11T00:30:00.000Z',amount_ml:70,feeding_method:'unknown',left_duration_seconds:null,right_duration_seconds:null,note:'旧记录',created_at:'2026-11-11 00:31:00'});
+    const response=await fetch(base+'/api/records',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fedAt:'2026-11-11T01:30:00.000Z',feedingMethod:'direct',leftDurationSeconds:620,rightDurationSeconds:305})});
     assert.equal(response.status,201);const saved=(await response.json()).record;assert.equal(saved.id,43);assert.equal(saved.amount_ml,null);
     await stop();base=await start();
     const after=(await (await fetch(base+'/api/records')).json()).records;
     assert.equal(after.find(row=>row.id===43).amount_ml,null);assert.equal(after.find(row=>row.id===7).amount_ml,70);
+    assert.equal(after.find(row=>row.id===43).left_duration_seconds,620);assert.equal(after.find(row=>row.id===43).right_duration_seconds,305);
+    // 模拟上一版已支持亲喂、但没有左右时长字段的数据库，再次启动仍保留记录。
+    await stop();
+    const previous=new DatabaseSync(join(dataDir,'babycare.sqlite'));
+    previous.exec('ALTER TABLE feedings DROP COLUMN left_duration_seconds; ALTER TABLE feedings DROP COLUMN right_duration_seconds;');previous.close();
+    base=await start();
+    const migrated=(await(await fetch(base+'/api/records')).json()).records;
+    assert.equal(migrated.find(row=>row.id===43).feeding_method,'direct');assert.equal(migrated.find(row=>row.id===43).amount_ml,null);
+    assert.equal(migrated.find(row=>row.id===43).left_duration_seconds,null);assert.equal(migrated.find(row=>row.id===7).amount_ml,70);
   } finally {await stop();await rm(dataDir,{recursive:true,force:true});}
 });

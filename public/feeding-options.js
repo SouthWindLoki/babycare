@@ -1,3 +1,4 @@
+import { formatNursingDuration } from './nursing-timer.js';
 export const feedingMethodLabels={direct:'母乳亲喂',breast_bottle:'瓶喂母乳',formula:'奶粉',unknown:'喂法未记录'};
 // Separate visual cues make direct feeding and bottle feeding easy to distinguish.
 export const feedingMethodIcons={direct:'🤱',breast_bottle:'🍼',formula:'🍼',unknown:'🍼'};
@@ -6,7 +7,7 @@ export function planMethods(feedingType,breastMethod='direct') {
   return feedingType==='mixed'?[breast,'formula']:feedingType==='breast'?[breast]:['formula'];
 }
 export function feedingValue(row) {
-  if(row.feeding_method==='direct')return '母乳亲喂 · 仅记时间';
+  if(row.feeding_method==='direct')return row.left_duration_seconds==null&&row.right_duration_seconds==null?'母乳亲喂 · 未记时长':`母乳亲喂 · 左 ${formatNursingDuration(row.left_duration_seconds)} · 右 ${formatNursingDuration(row.right_duration_seconds)}`;
   const amount=`${row.amount_ml} 毫升`;
   return row.feeding_method&&row.feeding_method!=='unknown'?`${feedingMethodLabels[row.feeding_method]} · ${amount}`:amount;
 }
@@ -30,5 +31,5 @@ export function updatePlanControls(ids) {
   }
   get('amountField').hidden=directOnly;
   get('amountField').querySelector('input').disabled=directOnly;
-  get('hint').textContent=directOnly?'母乳亲喂只记录时间，不设置毫升数。':'瓶喂默认奶量，每次滑动增加 10 毫升；记录时可按实际奶量调整。';
+  get('hint').textContent=directOnly?'母乳亲喂可记录左右侧时长，不设置毫升数。':'瓶喂默认奶量，每次滑动增加 10 毫升；记录时可按实际奶量调整。';
 }

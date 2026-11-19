@@ -4,33 +4,60 @@
 <body>
 <main class="shell">
   <header class="topbar"><a class="brand-lockup brand-link" href="/"><div class="brand-mark" aria-hidden="true"><span></span></div><h1 id="brand-name">宝宝日常</h1></a><a class="back-link config-entry" href="/baby.html"><span aria-hidden="true">⚙</span>配置中心</a></header>
-  <section class="intro-row"><div><p class="date-line" id="today-label"></p><h2 id="dashboard-title">宝宝的今天</h2><p class="intro-description" id="baby-age">每一个小日常，都值得记下来。</p></div><div class="baby-sun" aria-hidden="true"><span>✦</span></div></section>
-  <div class="home-tabs" role="tablist" aria-label="首页内容"><button type="button" id="overview-tab" role="tab" aria-selected="true" aria-controls="overview-panel" data-home-view="overview">首页概况</button><button type="button" id="records-tab" role="tab" aria-selected="false" aria-controls="records-panel" tabindex="-1" data-home-view="records">事件记录</button></div>
+  <section class="intro-row home-intro"><div class="home-intro-title"><p class="date-line" id="today-label"></p><h2 id="dashboard-title">宝宝的今天</h2><p class="intro-description" id="baby-age">每一个小日常，都值得记下来。</p></div>
+  <aside class="development-reminder development-home-reminder" id="development-reminder" hidden aria-labelledby="development-reminder-title">
+    <div><p class="development-eyebrow" id="development-reminder-status"></p><h4 id="development-reminder-title"></h4><p id="development-reminder-description"></p></div>
+    <div class="development-home-actions"><button type="button" class="primary-button" id="development-observation-open" aria-controls="development-observation-form" aria-expanded="false" hidden>记一下</button><a href="/#references/development">发育观察 <span aria-hidden="true">↗</span></a></div>
+  </aside>
+  <div class="baby-sun" aria-hidden="true"><span>✦</span></div></section>
+    <form id="development-observation-form" class="development-observation-form" hidden>
+      <fieldset><legend>这次观察到了吗？</legend><div class="development-assessment-choices"><label><input type="radio" name="observation-response" value="observed" required><span>观察到了</span></label><label><input type="radio" name="observation-response" value="not_yet"><span>这次没留意到</span></label><label><input type="radio" name="observation-response" value="unsure"><span>不确定</span></label></div></fieldset>
+      <label class="development-observation-note" for="development-observation-note">写两句（选填）<textarea id="development-observation-note" maxlength="300" rows="2" placeholder="例如：今天和宝宝说话时，TA看了我一会儿。"></textarea></label>
+      <div class="development-observation-form-actions"><button type="submit" class="primary-button">保存观察</button><button type="button" class="secondary-button" id="development-observation-cancel">先不记</button><span id="development-observation-save-status" role="status"></span></div>
+    </form>
+  <div class="home-tabs" role="tablist" aria-label="首页内容"><button type="button" id="overview-tab" role="tab" aria-selected="true" aria-controls="overview-panel" data-home-view="overview">首页概况</button><button type="button" id="records-tab" role="tab" aria-selected="false" aria-controls="records-panel" tabindex="-1" data-home-view="records">事件记录</button><button type="button" id="references-tab" role="tab" aria-selected="false" aria-controls="references-panel" tabindex="-1" data-home-view="references">参考资料</button></div>
   <button type="button" class="quick-actions-toggle" aria-controls="quick-actions" aria-expanded="true" hidden><span aria-hidden="true">↑</span> 展开记录按钮</button>
   <nav class="quick-actions" id="quick-actions" aria-label="快速记录">
     <a href="/feeding.html" class="action-feed"><span class="action-icon" aria-hidden="true">＋</span><span>记喂奶<small>记录奶量</small></span><span class="action-arrow" aria-hidden="true">↗</span></a>
     <a href="/weight.html" class="action-weight"><span class="action-icon" aria-hidden="true">＋</span><span>称体重<small>每日称重</small></span><span class="action-arrow" aria-hidden="true">↗</span></a>
-    <a href="/stool.html" class="action-stool"><span class="action-icon" aria-hidden="true">＋</span><span>记便便<small>拍照记录</small></span><span class="action-arrow" aria-hidden="true">↗</span></a>
-    <a href="/diaper.html" class="action-diaper"><span class="action-icon" aria-hidden="true">＋</span><span>换尿布<small>记录时间</small></span><span class="action-arrow" aria-hidden="true">↗</span></a>
+    <a href="/stool.html" class="action-stool" id="stool-action" hidden><span class="action-icon" aria-hidden="true">＋</span><span>记便便<small>2月龄内观察</small></span><span class="action-arrow" aria-hidden="true">↗</span></a>
+    <a href="/diaper.html" class="action-diaper" id="wet-diaper-action" hidden><span class="action-icon" aria-hidden="true">＋</span><span>记湿尿布<small>仅记尿液浸湿</small></span><span class="action-arrow" aria-hidden="true">↗</span></a>
     <a href="/length.html" class="action-length"><span class="action-icon" aria-hidden="true">＋</span><span>记身长<small>记录成长</small></span><span class="action-arrow" aria-hidden="true">↗</span></a>
     <a href="/abnormal.html" class="action-abnormal"><span class="action-icon" aria-hidden="true">＋</span><span>记异常<small>留意变化</small></span><span class="action-arrow" aria-hidden="true">↗</span></a>
     <a href="/medication.html" class="action-medication"><span class="action-icon" aria-hidden="true">＋</span><span>记用药<small>记录药品</small></span><span class="action-arrow" aria-hidden="true">↗</span></a>
   </nav>
   <section class="status-grid home-panel" id="overview-panel" role="tabpanel" aria-labelledby="overview-tab">
-    <article class="status-card next-card" id="next-card"><div class="status-card-head"><span class="card-kicker">下一次喂奶参考</span><button id="settings-toggle" class="icon-action labeled-action" type="button" aria-label="调整喂奶计划" title="调整喂奶计划"><span aria-hidden="true">⚙</span><span>计划</span></button></div><p class="next-date" id="next-date" hidden></p><div class="next-time" id="next-time">等待第一笔</div><p class="next-elapsed" id="next-helper">记下喂奶后，显示距上次喂奶的时间</p><p class="next-note">时间仅供参考，请按宝宝需要喂养。</p><div class="next-medication"><div class="status-card-head"><span class="card-kicker">下一次喂药参考</span><a class="icon-action labeled-action medication-plan-link" href="/medication-plans.html" aria-label="调整用药计划" title="调整用药计划"><span aria-hidden="true">⚙</span><span>计划</span></a></div><div id="next-medication-list" aria-live="polite">正在读取用药计划…</div></div></article>
+    <section class="status-card task-reminders" aria-labelledby="task-reminders-title">
+      <h3 id="task-reminders-title">任务提醒</h3>
+      <div class="task-reminders-grid">
+    <article class="task-card next-card" id="next-card"><div class="status-card-head"><span class="card-kicker">下一次喂奶参考</span><button id="settings-toggle" class="icon-action labeled-action" type="button" aria-label="调整喂奶计划" title="调整喂奶计划"><span aria-hidden="true">⚙</span><span>计划</span></button></div><p class="next-date" id="next-date" hidden></p><div class="next-time" id="next-time">等待第一笔</div><p class="next-elapsed" id="next-helper">记下喂奶后，显示距上次喂奶的时间</p><p class="next-note">时间仅供参考，请按宝宝需要喂养。</p></article>
+        <article class="task-card next-medication" id="next-medication-card"><div class="status-card-head"><span class="card-kicker">下一次用药参考</span><a class="icon-action labeled-action medication-plan-link" href="/medication-plans.html" aria-label="调整用药计划" title="调整用药计划"><span aria-hidden="true">⚙</span><span>计划</span></a></div><p class="medication-plan-count" id="medication-plan-count" role="status">正在读取用药计划…</p><div class="medication-reference-body"><div id="next-medication-list" aria-live="polite"></div><nav class="medication-plan-switch" id="medication-plan-switch" aria-label="切换用药计划" hidden><button class="secondary-button" id="previous-medication-plan" type="button" aria-label="上一项用药计划" title="上一项用药计划"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button><span id="medication-plan-position" aria-live="polite"></span><button class="secondary-button" id="next-medication-plan" type="button" aria-label="下一项用药计划" title="下一项用药计划"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></nav></div></article>
+      </div>
+    </section>
     <article class="status-card feeding-card"><div class="status-card-head"><span class="card-kicker">喂奶概况</span><button class="trend-trigger" type="button" data-trend="feeding">看趋势</button></div>
       <div class="feeding-overview">
-        <div class="milk-metric"><p class="milk-metric-label">今日奶量</p><p class="milk-total"><span id="today-amount">0</span><small>毫升</small></p><p class="milk-count"><span id="today-count">0</span> 次</p><p class="reference-caption">零点至现在，仅作记录</p><p class="reference-caption" id="today-direct"></p></div>
-        <div class="milk-metric"><p class="milk-metric-label">最近 24 小时</p><p class="milk-total"><span id="last24-amount">0</span><small>毫升</small></p><p class="milk-count"><span id="last24-count">0</span> 次</p><p class="reference-caption">从现在往前计算</p><p class="milk-status" id="rolling-status" role="status">正在读取</p><p class="reference-caption" id="rolling-direct"></p></div>
+        <div class="milk-metric"><div class="feeding-method-totals"><div class="nursing-overview" id="rolling-direct" hidden><p class="feeding-part-label">母乳亲喂</p><p class="milk-total"><span id="last24-direct-count">0</span><small>次</small></p><p class="nursing-duration" id="last24-direct-duration"></p><p class="reference-caption" id="last24-direct-sides"></p><p class="reference-caption" id="last24-direct-missing"></p></div><div class="bottle-overview" id="last24-bottle"><p class="feeding-part-label">瓶喂奶量</p><p class="milk-total"><span id="last24-amount">0</span><small>毫升</small></p><p class="reference-caption" id="last24-bottle-count"></p></div></div><p class="milk-count">共 <span id="last24-count">0</span> 次喂奶</p><p class="muted feeding-average" id="today-average">记录两次喂奶后显示平均间隔</p></div>
+        <aside class="feeding-cues" aria-labelledby="feeding-cues-title">
+          <h4 id="feeding-cues-title">喂奶时，主要看这三点</h4>
+          <ul class="feeding-cues-list">
+            <li><strong>继续喂：</strong>宝宝含得住，吸得有节奏，还能听到吞咽。</li>
+            <li><strong>先停一下：</strong>吸得慢了，松开嘴、闭嘴、转头，手也放松。</li>
+            <li><strong>可能不是饿：</strong>只是含着轻轻吸，吞咽很少，可能是想安抚或困了。</li>
+          </ul>
+          <p class="feeding-cues-note">先抱一抱、拍嗝，再看宝宝要不要继续；不强迫喝完。</p>
+        </aside>
       </div>
-      <p class="muted feeding-average" id="today-average">记录两次后显示平均间隔</p>
       <div class="milk-reference"><p class="reference-caption" id="milk-stage"></p><p class="reference-amount" id="milk-range"></p></div>
-      <div class="nutrition-actions"><button class="secondary-button" type="button" id="nutrition-info">参考说明</button></div>
+      <p class="reference-caption nutrition-citation"><a class="reference-citation" href="/#references/feeding">来源：国家卫健委《婴幼儿营养喂养评估服务指南（试行）》</a></p>
     </article>
-    <article class="status-card"><div class="status-card-head"><span class="card-kicker">最近的体重</span><button class="trend-trigger" type="button" data-trend="weight">看趋势</button></div><div class="weight-number" id="latest-weight">—</div><p class="weight-change" id="weight-change"></p><p class="muted" id="weight-helper">今天称了吗？记一下吧</p></article>
-    <article class="status-card"><div class="status-card-head"><span class="card-kicker">最近的身长</span><button class="trend-trigger" type="button" data-trend="length">看趋势</button></div><div class="length-number" id="latest-length">—</div><p class="weight-change" id="length-change"></p><p class="muted" id="length-helper">量一量，记下宝宝的成长</p></article>
-    <article class="status-card care-count-card"><div class="status-card-head"><span class="card-kicker">今天换尿布</span><button class="trend-trigger" type="button" data-trend="diaper">看趋势</button></div><div class="count-number"><span id="today-diaper-count">0</span><small>次</small></div><p class="muted">记录今天已经换过的次数</p></article>
-    <article class="status-card care-count-card"><div class="status-card-head"><span class="card-kicker">今天拉臭臭</span><button class="trend-trigger" type="button" data-trend="stool">看趋势</button></div><div class="count-number"><span id="today-stool-count">0</span><small>次</small></div><p class="muted">记录今天已经发生的次数</p></article>
+    <article class="status-card growth-card"><div class="status-card-head"><span class="card-kicker">成长记录</span></div><div class="growth-metrics"><section class="growth-metric"><div class="growth-metric-head"><span>体重</span><button class="trend-trigger" type="button" data-trend="weight">看趋势</button></div><p class="muted" id="weight-helper">今天称了吗？记一下吧</p><div class="growth-summary"><div class="weight-number" id="latest-weight">—</div><div class="growth-range-visual" id="weight-range-visual" hidden></div></div><p class="weight-change" id="weight-change"></p></section><section class="growth-metric"><div class="growth-metric-head"><span>身长</span><button class="trend-trigger" type="button" data-trend="length">看趋势</button></div><p class="muted" id="length-helper">量一量，记下宝宝的成长</p><div class="growth-summary"><div class="length-number" id="latest-length">—</div><div class="growth-range-visual" id="length-range-visual" hidden></div></div><p class="weight-change" id="length-change"></p></section></div><section class="growth-nutrition" id="growth-nutrition" data-state="incomplete" aria-live="polite"><div class="growth-nutrition-heading"><span>营养状况</span><span id="growth-nutrition-date"></span></div><p id="growth-nutrition-result">暂不能完整评价</p><p id="growth-nutrition-hint">记下体重和身长，就能查看结果。</p></section><p class="reference-caption growth-source"><a class="reference-citation" href="/#references/growth">来源：卫健委《7岁以下儿童生长标准》</a></p></article>
+    <article class="status-card excretion-card" id="excretion-card" hidden>
+      <div class="status-card-head"><span class="card-kicker">排泄记录</span><span class="muted">最近 24 小时</span></div>
+      <div class="excretion-metrics">
+        <section class="excretion-metric" id="wet-diaper-card" hidden><div class="excretion-metric-head"><span>湿尿布</span><button class="trend-trigger" type="button" data-trend="diaper" aria-label="查看湿尿布趋势">看趋势</button></div><div class="count-number"><span id="today-diaper-count">0</span><small>片</small></div><p class="reference-caption" id="wet-diaper-reference">出生第5天起：每24小时通常至少6片较沉的湿尿布</p></section>
+        <section class="excretion-metric" id="stool-card" hidden><div class="excretion-metric-head"><span>便便</span><button class="trend-trigger" type="button" data-trend="stool" aria-label="查看便便趋势">看趋势</button></div><div class="count-number"><span id="today-stool-count">0</span><small>次</small></div><p class="muted">2月龄内可作为喂养观察线索</p></section>
+      </div>
+    </article>
   </section>
   <section class="panel history-panel home-panel" id="records-panel" role="tabpanel" aria-labelledby="records-tab" hidden>
     <div class="date-range" aria-label="查看记录的日期范围">
@@ -38,17 +65,104 @@
       <label>结束日期<input id="logs-to" type="date" required></label>
       <span class="date-shortcuts" aria-label="快捷日期范围"><button id="recent-days" class="secondary-button" type="button">最近两天</button><button id="today-only" class="secondary-button" type="button">今天</button></span>
     </div>
-    <div class="section-heading log-heading"><div class="log-filters" role="tablist" aria-label="选择要查看的事件"><button type="button" role="tab" data-filter="all" aria-selected="true">全部</button><button type="button" role="tab" data-filter="feeding" aria-selected="false">喂奶</button><button type="button" role="tab" data-filter="weight" aria-selected="false">体重</button><button type="button" role="tab" data-filter="length" aria-selected="false">身长</button><button type="button" role="tab" data-filter="stool" aria-selected="false">便便</button><button type="button" role="tab" data-filter="diaper" aria-selected="false">尿布</button><button type="button" role="tab" data-filter="medication" aria-selected="false">用药</button><button type="button" role="tab" data-filter="abnormal" aria-selected="false">异常</button></div><span class="heading-actions"><button type="button" id="export-feeding" class="icon-action labeled-action" aria-label="下载喂奶表图片" title="下载喂奶表图片"><span aria-hidden="true">↓</span><span>下载</span></button><button type="button" id="share-feeding" class="icon-action labeled-action" aria-label="转发喂奶表到微信" title="转发喂奶表到微信"><span aria-hidden="true">↗</span><span>转发</span></button><button type="button" id="refresh-logs" class="icon-action labeled-action" aria-label="刷新记录" title="刷新记录"><span aria-hidden="true">↻</span><span>刷新</span></button></span></div>
+    <div class="section-heading log-heading"><div class="log-filters" role="tablist" aria-label="选择要查看的事件"><button type="button" role="tab" data-filter="all" aria-selected="true">全部</button><button type="button" role="tab" data-filter="feeding" aria-selected="false">喂奶</button><button type="button" role="tab" data-filter="weight" aria-selected="false">体重</button><button type="button" role="tab" data-filter="length" aria-selected="false">身长</button><button type="button" role="tab" data-filter="stool" aria-selected="false">便便</button><button type="button" role="tab" data-filter="diaper" aria-selected="false">湿尿布</button><button type="button" role="tab" data-filter="medication" aria-selected="false">用药</button><button type="button" role="tab" data-filter="abnormal" aria-selected="false">异常</button></div><span class="heading-actions"><button type="button" id="export-feeding" class="icon-action labeled-action" aria-label="下载喂奶表图片" title="下载喂奶表图片"><span aria-hidden="true">↓</span><span>下载</span></button><button type="button" id="share-feeding" class="icon-action labeled-action" aria-label="转发喂奶表到微信" title="转发喂奶表到微信"><span aria-hidden="true">↗</span><span>转发</span></button><button type="button" id="refresh-logs" class="icon-action labeled-action" aria-label="刷新记录" title="刷新记录"><span aria-hidden="true">↻</span><span>刷新</span></button></span></div>
     <p class="load-message" id="load-message" role="status">正在读取记录…</p><div class="record-list" id="record-list"></div><p class="history-hint muted">显示所选日期范围内的记录。下载和转发只包含该范围的喂奶表。</p>
+  </section>
+  <section class="home-panel references-home-panel" id="references-panel" role="tabpanel" aria-labelledby="references-tab" hidden>
+  <nav class="reference-tabs" role="tablist" aria-label="参考资料分类">
+    <button type="button" role="tab" id="vaccines-tab" aria-controls="vaccines-panel" aria-selected="true" data-reference-tab="vaccines">疫苗路线图</button>
+    <button type="button" role="tab" id="feeding-tab" aria-controls="feeding-panel" aria-selected="false" tabindex="-1" data-reference-tab="feeding">喂养参考</button>
+    <button type="button" role="tab" id="growth-tab" aria-controls="growth-panel" aria-selected="false" tabindex="-1" data-reference-tab="growth">成长标准</button>
+    <button type="button" role="tab" id="development-tab" aria-controls="development-panel" aria-selected="false" tabindex="-1" data-reference-tab="development">发育观察</button>
+  </nav>
+  <p id="reference-load-status" class="reference-caution" role="status" hidden></p>
+  <section id="vaccines-panel" class="reference-panel" role="tabpanel" aria-labelledby="vaccines-tab">
+    <div class="reference-section-heading"><div><h3>儿童免疫路线</h3><p>按年龄顺序查看出生时到6周岁的免费和自费项目。</p></div></div>
+    <p class="vaccine-profile-line" id="vaccine-baby-status">正在读取宝宝资料…</p>
+    <section class="vaccine-summary" aria-label="疫苗分类汇总">
+      <div id="vaccine-summary-lists" class="vaccine-summary-lists"></div>
+    </section>
+    <h4 class="vaccine-route-heading">按月龄查看</h4>
+    <div id="vaccine-route" class="vaccine-route" aria-live="polite"></div>
+    <details class="vaccine-reference-details">
+      <summary><span>接种说明与资料来源</span><span class="vaccine-chevron" aria-hidden="true"></span></summary>
+      <div class="vaccine-reference-body">
+        <p id="vaccine-source"></p>
+        <p>接种时间、适用条件及参考价格，以当地接种门诊的最新安排为准。</p>
+        <p id="vaccine-legend"></p>
+        <p class="reference-source-line"><a href="https://www.cdc.zj.cn/ywpd/mygh/zcfg/202208/t20220819_6592.shtml" target="_blank" rel="noopener noreferrer">浙江省疾控中心《浙江省疫苗接种方案》（2019年）</a> · <a href="https://www.ndcpa.gov.cn/jbkzzx/c100014/common/content/content_2073005020766703616.html" target="_blank" rel="noopener noreferrer">国家免疫规划疫苗儿童免疫程序及说明（2026年版）原文</a> · <a href="https://www.chinacdc.cn/jkyj/mygh02/jswj2026/202606/t20260624_1837332.html" target="_blank" rel="noopener noreferrer">非免疫规划疫苗使用指导原则原文</a></p>
+      </div>
+    </details>
+  </section>
+  <section id="feeding-panel" class="reference-panel" role="tabpanel" aria-labelledby="feeding-tab" hidden>
+    <div class="reference-section-heading"><div><h3>婴幼儿喂养参考</h3><p>按过去24小时查看奶量和喂养阶段。</p></div><span class="reference-source-mark">连续24小时</span></div>
+    <p class="reference-note" id="feeding-baby-status">正在读取宝宝资料…</p>
+    <div class="reference-table-wrap"><div id="feeding-reference-table" class="reference-table feeding-reference-table" role="table" aria-label="婴幼儿喂养参考表"></div></div>
+    <p class="reference-caution">亲喂按宝宝需要进行，不把亲喂换算成毫升判断达标。未满月的600～700毫升是本应用沿用满月参考的展示规则，不是出生起的统一要求。</p>
+    <p class="reference-source-line"><a href="https://www.nhc.gov.cn/fys/c100078/202502/19903ff647694f3a85ed6fe332380b34.shtml" target="_blank" rel="noopener noreferrer">国家卫生健康委员会《婴幼儿营养喂养评估服务指南（试行）》原文</a></p>
+  </section>
+  <section id="growth-panel" class="reference-panel" role="tabpanel" aria-labelledby="growth-tab" hidden>
+    <div class="reference-section-heading"><div><h3>体重和身长标准</h3><p>按性别、指标和月龄查看第3至第97百分位。</p></div><span class="reference-source-mark">仅作成长趋势参考</span></div>
+    <p class="reference-note" id="growth-baby-status">正在读取宝宝资料…</p>
+    <div class="reference-controls" role="group" aria-label="成长标准筛选">
+      <div class="reference-control-group"><span class="reference-control-label">查看指标</span><div class="reference-segmented"><button type="button" data-growth-kind="weight" aria-pressed="true">体重</button><button type="button" data-growth-kind="length" aria-pressed="false">身长</button></div></div>
+      <div class="reference-control-group"><span class="reference-control-label">性别</span><div class="reference-segmented"><button type="button" data-growth-sex="male" aria-pressed="true">男孩</button><button type="button" data-growth-sex="female" aria-pressed="false">女孩</button></div></div>
+      <label class="reference-control-group" for="growth-age"><span class="reference-control-label">月龄 / 年龄段</span><select id="growth-age"><option value="all">全部月龄</option><option value="0:12">0～11月龄</option><option value="12:24">12～23月龄</option><option value="24:48">2～3周岁</option><option value="48:84">4～6周岁</option></select></label>
+    </div>
+    <p class="reference-caution">仅在查看宝宝同性别的标准时标记当前阶段和已有测量。2岁后的表格按官方年龄节点显示，不插值；7岁及以上不再标记。</p>
+    <p id="growth-measurement" class="reference-note" hidden></p>
+    <div class="reference-table-wrap"><div id="growth-reference-table" class="growth-grid" role="table" aria-label="儿童生长百分位参考表"></div></div>
+    <p class="reference-source-line"><a href="https://www.nhc.gov.cn/fzs/c100048/202211/5001d7cf57774770a1d49c1df46a291f.shtml" target="_blank" rel="noopener noreferrer">国家卫健委《7岁以下儿童生长标准》公告</a> · <a href="https://www.nhc.gov.cn/fzs/c100048/202211/5001d7cf57774770a1d49c1df46a291f/files/1733125082501_81468.pdf" target="_blank" rel="noopener noreferrer">官方标准 PDF</a></p>
+    <p class="growth-disclaimer">仅作成长趋势参考，不用于诊断。</p>
+  </section>
+  <section id="development-panel" class="reference-panel" role="tabpanel" aria-labelledby="development-tab" hidden>
+    <div class="reference-section-heading"><div><h3>发育观察</h3><p class="development-secondary-copy">按官方监测年龄，观察宝宝的语言、互动和动作发育。</p></div></div>
+    <p class="reference-note development-secondary-copy" id="development-baby-status" role="status"></p>
+    <details class="development-observation-history"><summary>成长观察随记 <span id="development-observation-count"></span></summary><p class="development-guidance">来自首页的小观察，按日期留存，不计入下方正式自评结果。</p><ul id="development-observation-history"></ul><p id="development-observation-history-status" class="development-guidance" role="status"></p></details>
+    <section class="development-assessment" aria-labelledby="development-assessment-heading">
+      <div class="development-subheading"><div><h4 id="development-assessment-heading">记录宝宝的日常表现</h4><p class="development-secondary-copy">0～3岁心理行为发育标志自评，结合日常表现逐项记录。</p></div></div>
+      <div class="reference-controls"><label class="reference-control-group" for="development-assessment-age"><span class="reference-control-label">查看月龄</span><select id="development-assessment-age"></select></label><button type="button" class="secondary-button" id="development-assessment-recommended">回到宝宝阶段</button></div>
+      <p class="development-guidance" id="development-assessment-age-note"></p>
+      <div id="development-assessment-domains" class="development-assessment-domains" aria-live="polite"></div>
+      <p id="development-assessment-save-status" class="development-guidance" role="status"></p>
+      <p id="development-assessment-result" class="development-assessment-result" role="status" aria-live="polite"></p>
+      <details class="development-assessment-help"><summary>观察方法与来源</summary><div>
+        <p>结合日常表现选择，选择后自动保存；不确定可以先留着，下次留意到再更新。</p>
+        <p>不要让宝宝接触小丸、纽扣、串珠等易误吸的小物品来测试，也不要强迫站立或上下楼梯。</p>
+        <p>记录按月龄保存在当前服务，其他设备可刷新查看。</p>
+        <p class="reference-source-line" id="development-assessment-source">表内条目来自国家卫健委《婴幼儿早期发展服务指南（试行）》附件4。自评用于日常观察和咨询，不替代儿童保健人员评估。</p>
+      </div></details>
+    </section>
+    <details class="development-professional"><summary>专业复筛与评估</summary><div>
+      <p>如果担心宝宝发育，或自评发现未出现的发育标志，请向社区儿童保健门诊或妇幼保健机构咨询。0～6岁儿童心理行为发育问题预警征象筛查，以及后续使用的发育量表和专项复筛工具，应由儿童保健或专业医疗人员结合情况开展。</p>
+      <p>卫健委规范列出的复筛参考包括：18月龄以下使用儿心量表-II等发育量表；18～24月龄使用M-CHAT修订版；24月龄及以上使用ABC量表；18月龄及以上还同时使用儿心量表-II等发育量表。复筛由专业人员开展，这些工具不是家长自测题，也不能单独作为诊断依据。</p>
+      <p class="reference-source-line"><a href="https://www.nhc.gov.cn/fys/c100078/202209/0cb5cf9dd3964c0ab46beb31c1be312d.shtml" target="_blank" rel="noopener noreferrer">国家卫健委《0～6岁儿童孤独症筛查干预服务规范（试行）》</a></p>
+    </div></details>
+    <h4 class="development-warning-heading">查阅发育预警信号</h4>
+    <div class="reference-controls"><label class="reference-control-group" for="development-age"><span class="reference-control-label">查看月龄</span><select id="development-age"></select></label><button type="button" class="secondary-button" id="development-recommended">回到宝宝阶段</button></div>
+    <article class="development-stage" aria-labelledby="development-stage-title">
+      <div class="development-stage-heading"><h4 id="development-stage-title"></h4><span id="development-stage-status"></span></div>
+      <p class="development-stage-intro">到了这个年龄，留意是否有以下表现：</p>
+      <ul class="development-signs" id="development-signs"></ul>
+    </article>
+    <details class="development-source"><summary>观察说明与官方来源</summary><div>
+      <p class="development-guidance" id="development-newborn-note" hidden></p>
+      <p class="reference-caution" id="development-positive-guidance"></p>
+      <p class="development-regression" id="development-regression-guidance"></p>
+      <p>结合日常互动观察，由儿童保健人员完成筛查。不必刻意制造很大声音、强行训练动作，或让宝宝接触小物品来测试。</p>
+      <p>新生儿没有可据此自行确诊孤独症的检查表。本页是发育预警参考，不提供诊断评分或自行干预方案。</p>
+      <p>到监测月龄时首页会提示；已开启系统通知时，同一宝宝、同一节点在当前浏览器提醒一次。请保持页面打开，关闭页面后无法保证提醒。</p>
+      <p class="reference-source-line" id="development-source"></p>
+    </div></details>
+  </section>
   </section>
   <section class="settings-drawer" id="settings-drawer" aria-hidden="true" inert>
     <div class="section-heading"><h3>喂奶提醒设置</h3><button class="icon-button close-button" id="settings-close" type="button" aria-label="关闭设置">×</button></div>
     <fieldset id="feeding-type" class="feeding-methods plan-feeding-types"><legend>喂养方式</legend><div class="symptom-options"><label class="symptom-option"><input type="radio" name="feeding-type" value="formula" checked required><span>奶粉</span></label><label class="symptom-option"><input type="radio" name="feeding-type" value="breast" required><span>母乳</span></label><label class="symptom-option"><input type="radio" name="feeding-type" value="mixed" required><span>混合喂养（母乳＋奶粉）</span></label></div></fieldset><label id="breast-method-field" hidden>母乳默认喂法<select id="breast-method"><option value="direct">亲喂（只记时间）</option><option value="bottle">瓶喂母乳（记录毫升）</option></select></label><label id="formula-brand-field">奶粉品牌<input id="formula-brand" type="text" maxlength="60" placeholder="例如：××金装"></label><label id="formula-stage-field">奶粉段数<select id="formula-stage" required><option value="1">1 段（0-6 个月）</option><option value="2">2 段（6-12 个月）</option><option value="3">3 段（12-36 个月）</option></select></label><label id="drawer-amount-field">瓶喂默认奶量（毫升）<output class="range-output" id="plan-amount-output">120 毫升</output><input id="plan-amount" type="range" min="10" max="300" step="10" value="120" required></label><label>两次喂奶间隔（小时）<input id="interval-hours" type="number" min="0.5" max="24" step="0.5" required></label><p class="muted" id="drawer-feeding-hint">亲喂只记时间，瓶喂记录奶量。</p><button class="primary-button full-width" id="settings-save" type="button">保存喂奶计划</button>
     <hr class="settings-divider"><p class="muted">系统通知需要浏览器支持和安全连接。请保持页面打开，锁屏或关闭页面后无法保证提醒送达。</p><button class="secondary-button full-width" id="enable-notifications" type="button">开启系统通知</button>
   </section>
-  <dialog id="nutrition-dialog" class="nutrition-dialog"><div class="photo-dialog-heading"><h3>奶量参考说明</h3><button type="button" id="close-nutrition" class="secondary-button">关闭</button></div><p id="nutrition-stage"></p><p id="nutrition-reason"></p><p>“今日奶量”按设备本地时间从零点统计至现在，只用于查看当天记录。“最近 24 小时”从此刻向前取满 24 小时，包含昨夜。</p><p>本应用将每日参考量与最近连续 24 小时的记录量比较；“今日奶量”只作自然日累计，不参与达标判断。</p><p>24 小时状态只比较该时间范围内已记录的瓶喂奶量。含亲喂记录时无法知道完整总量，不判断达标；混合喂养或瓶喂母乳的低月龄宝宝，也不套用配方奶参考值。不要为了达标强行补喂。</p><p>参考量按足月宝宝的一般情况展示，应结合生长、排尿及宝宝状态；早产、低出生体重、疾病或特殊配方请按专业医嘱。不要为了达到数值强行喂养。</p><p>来源：《上海市 0～6 岁儿童营养指导技术规范》（2019 年）</p><div class="nutrition-actions"><a class="secondary-button" id="nutrition-source" href="https://wsjkw.sh.gov.cn/cmsres/3b/3bfc6a0d7ba246099e19bc8266491b5a/0ab6f390a2f617b0ed38efffb43f9cc7.pdf" target="_blank" rel="noopener noreferrer">规范原文 ↗</a></div></dialog>
   <dialog id="photo-dialog" class="photo-dialog"><div class="photo-dialog-heading"><h3>便便照片</h3><button type="button" id="close-photo" class="secondary-button">关闭照片</button></div><img id="full-photo" alt="排便记录的照片"></dialog>
-  <dialog id="trend-dialog" class="trend-dialog"><div class="photo-dialog-heading"><h3 id="trend-title">趋势图</h3><button type="button" id="close-trend" class="secondary-button">关闭</button></div><p class="trend-orientation">图表横向显示</p><div class="trend-modes" role="group" aria-label="趋势图范围"><button type="button" data-trend-mode="day" aria-pressed="true">按天</button><button type="button" data-trend-mode="month" aria-pressed="false">按月</button></div><p class="trend-message" id="trend-message" role="status">正在读取趋势…</p><div class="trend-chart" id="trend-chart" role="img" aria-label="趋势图"></div></dialog>
-  <div class="toast" id="toast" role="status"></div><footer>宝宝日常 · 记录每一次安心<br>记录与提醒供日常照护参考，请以专业医嘱为准</footer>
+  <dialog id="trend-dialog" class="trend-dialog"><div class="photo-dialog-heading"><h3 id="trend-title">趋势图</h3><button type="button" id="close-trend" class="secondary-button">关闭</button></div><div class="trend-modes" role="group" aria-label="趋势图范围"><button type="button" data-trend-mode="day" aria-pressed="true">按天</button><button type="button" data-trend-mode="month" aria-pressed="false">按月</button></div><p class="trend-message" id="trend-message" role="status">正在读取趋势…</p><div class="trend-chart" id="trend-chart" aria-label="趋势图"></div></dialog>
+  <div class="toast" id="toast" role="status"></div><footer><a class="footer-update-link" href="/updates.html">更新日志</a><br>宝宝日常 · 记录每一次安心<br>记录与提醒供日常照护参考，请以专业医嘱为准</footer>
 </main><script type="module" src="/app.js"></script>
 </body></html>
